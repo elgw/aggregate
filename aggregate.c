@@ -7,34 +7,35 @@
 
 typedef uint64_t u64;
 
+
+
+#if 1 // For MINIMUM
+// Note; We only need one of these for min
 typedef struct {
     double val;
     double agg;
 } agg;
-
 // combine, lift, lower
 const agg agg0 = {.val = INFINITY, .agg = INFINITY};
 const agg agg1 = {.val = INFINITY, .agg = INFINITY};
 static agg lift(double v){
     return (agg) {.val = v, .agg = v};
-    //agg r = {v, v}; return r;
 }
-
 static double lower(agg a){
     return a.val;
 }
-
 static agg combine(agg a, agg b){
     if(a.agg < b.agg){
         return a;
     }
     return b;
 }
+#endif
 
 // Algorithm below
 
 struct aggregate_struct {
-    agg * pairs;
+    agg * pairs; // No: this is a list of union(value, agg)
     uint64_t n, capacity;
     uint64_t H; // head = Writepos
     agg aggH; // aggregate of the head elements
