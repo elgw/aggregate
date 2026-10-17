@@ -10,6 +10,14 @@ $`w`$ elements in total.
 
 Tested here: A single list, implemented as a circular/ring buffer
 
+## (side) notes
+- If not obvious, this is throwaway code. Not used outside of this
+  repo.
+
+- For large windows consider [Kahan
+  summation](https://en.wikipedia.org/wiki/Kahan_summation_algorithm)
+  and similar methods.
+
 ## Results
 
 Quick tests shows reasonable performance. At the moment there are
@@ -31,12 +39,22 @@ make -B OPT=1 test_mean -B && ./test_mean
 make -B OPT=1 test_min -B  && ./test_stddev
 ```
 
+Latency, ticks:
+
 |           | Two-Stacks | This |
 |----------:|-----------:|-----:|
 |   Max/Min |        125 |   77 |
 | ArithMean |        165 |   79 |
 |    StdDev |        200 |   95 |
 
+Throughput can be approximated by $`4*10^9/latency*8`$ bytes per second, which
+gives these results, unit MB/s.
+
+|           | Two-Stacks | This |
+|----------:|-----------:|-----:|
+|   Max/Min |        256 |  416 |
+| ArithMean |        194 |  405 |
+|    StdDev |        160 |  337 |
 
 ## Implementation / Memory Layout
 
@@ -74,3 +92,5 @@ A call to `accumulate_eval` will return
 [^2]: Kanat Tangwongsan, Martin Hirzel, and Scott Schneider. 2017. Low-Latency Sliding-Window Aggregation in Worst-Case Constant Time. In Proceedings of the 11th ACM International Conference on Distributed and Event-based Systems (DEBS '17). Association for Computing Machinery, New York, NY, USA, 66–77. https://doi.org/10.1145/3093742.3093925
 [^3]: Orson R. L. Peters, Two-Stack Sliding-Window Aggregation,
     [https://orlp.net/blog/two-stack-sliding-window-aggregation/]
+
+- [https://gmplib.org/]
