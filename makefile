@@ -14,10 +14,10 @@ CFLAGS += -fsanitize=address
 endif
 endif
 
-test_mean: aggregate_mean.o test.c
+test_mean: aggregate_mean.o test_mean.c
 	$(CC) $(CFLAGS) aggregate_mean.o test_mean.c $(LDFLAGS) -o test_mean
 
-test_min: aggregate_min.o test.c
+test_min: aggregate_min.o test_min.c
 	$(CC) $(CFLAGS) aggregate_min.o test_min.c $(LDFLAGS) -o test_min
 
 test_stddev: aggregate_stddev.o test.c
