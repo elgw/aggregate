@@ -10,10 +10,10 @@
 typedef uint64_t u64;
 typedef uint32_t u32;
 
-void test_mean(int w){
+void test_stddev(int w){
     const int verbose = 1;
     if(verbose > 0){
-        printf("Testing with window size = %d\n", w);
+        printf("AGGREGATE_STDDEV: Testing with window size = %d\n", w);
     }
     aggregate * AGG = aggregate_new(w);
 
@@ -63,6 +63,7 @@ void test_mean(int w){
     if(verbose > 1){
         printf("EVAL_POP_PUSH cycle\n");
     }
+
     int n_test = 10000000 / w;
     double r;
 
@@ -108,11 +109,11 @@ int main(int argc, char ** argv){
         printf("%s takes no arguments\n", argv[0]);
     }
 
-    test_mean(16384); // 2^14
+    test_stddev(16384); // 2^14
     return EXIT_SUCCESS;
 
     for(int w = 3; w < 121; w++){
-        test_mean(w);
+        test_stddev(w);
     }
     return EXIT_SUCCESS;
 }

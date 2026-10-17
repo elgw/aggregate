@@ -13,7 +13,7 @@ typedef uint32_t u32;
 void test_mean(int w){
     const int verbose = 1;
     if(verbose > 0){
-        printf("Testing with window size = %d\n", w);
+        printf("AGGREGATE_MEAN: Testing with window size = %d\n", w);
     }
     aggregate * AGG = aggregate_new(w);
 
@@ -63,7 +63,7 @@ void test_mean(int w){
     if(verbose > 1){
         printf("EVAL_POP_PUSH cycle\n");
     }
-    int n_test = 10000;
+    int n_test = 10000000 / w;
     double r;
 
     for(int kk = 0; kk < n_test; kk++){

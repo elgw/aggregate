@@ -30,15 +30,15 @@ Timings for this code: AMD Ryzen 3700X, gcc version 13.3.0.
 
 ``` shell
 make -B OPT=1 test_mean -B && ./test_mean
-make -B OPT=1 test_min -B && ./test_min
-make -B OPT=1 test_min -B && ./test_stddev
+make -B OPT=1 test_min -B  && ./test_min
+make -B OPT=1 test_min -B  && ./test_stddev
 ```
 
 |           | Two-Stacks | This |
 |----------:|-----------:|-----:|
-|   Max/Min |        125 |   80 |
-| ArithMean |        165 |   73 |
-|    StdDev |        200 |  107 |
+|   Max/Min |        125 |   77 |
+| ArithMean |        165 |   79 |
+|    StdDev |        200 |   95 |
 
 
 # Memory Layout
