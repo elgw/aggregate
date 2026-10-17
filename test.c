@@ -13,9 +13,9 @@ typedef uint32_t u32;
 void test_mean(int w){
     const int verbose = 1;
     if(verbose > 0){
-        printf("AGGREGATE_MEAN: Testing with window size = %d\n", w);
+        printf("AGG_MEAN_MEAN: Testing with window size = %d\n", w);
     }
-    aggregate * AGG = aggregate_new(w);
+    agg_mean_ * AGG = agg_mean_new(w);
 
     u64 t0, t1;
     u32 cpuid;
@@ -28,32 +28,32 @@ void test_mean(int w){
         if(verbose > 1){
             printf("Adding %f\n", v);
         }
-        aggregate_push(AGG, v);
+        agg_mean_push(AGG, v);
         if(verbose > 2){
-            aggregate_print(AGG);
+            agg_mean_print(AGG);
         }
         double r;
-        aggregate_eval(AGG, &r);
+        agg_mean_eval(AGG, &r);
         assert(v == r);
         if(verbose > 1){
             printf("Popping\n");
         }
-        if(aggregate_pop(AGG)){
+        if(agg_mean_pop(AGG)){
             assert(0);
         }
         if(verbose > 2){
-            aggregate_print(AGG);
+            agg_mean_print(AGG);
         }
     }
 
-    aggregate_reset(AGG);
+    agg_mean_reset(AGG);
     if(verbose > 1){
         printf("Fill the buffer\n");
     }
     for(int kk = 0; kk < w; kk++){
-        aggregate_push(AGG, 10.0 - kk);
+        agg_mean_push(AGG, 10.0 - kk);
         if(verbose > 2){
-            aggregate_print(AGG);
+            agg_mean_print(AGG);
         }
     }
 
@@ -74,9 +74,9 @@ void test_mean(int w){
             double v = 10.0 * (double) rand() / (double) RAND_MAX;
             sum += v;
             t0 = __rdtscp(&cpuid);
-            aggregate_pop(AGG);
-            aggregate_push(AGG, v);
-            aggregate_eval(AGG, &r);
+            agg_mean_pop(AGG);
+            agg_mean_push(AGG, v);
+            agg_mean_eval(AGG, &r);
             t1 = __rdtscp(&cpuid);
             t_ppe += t1 - t0;
             rsum += r;
@@ -88,7 +88,7 @@ void test_mean(int w){
             printf("ERROR:\n");
             printf("Expected %f\n", sum / (double) w);
             printf("Got:     %f\n", r);
-            aggregate_print(AGG);
+            agg_mean_print(AGG);
             assert(0);
             exit(EXIT_FAILURE);
         }
@@ -96,47 +96,47 @@ void test_mean(int w){
     printf("   Results after %lu operations\n", n_operations);
     printf("   Avg. PPE Time: %.1f\n", (double) t_ppe / (double) n_operations);
 
-    aggregate_free(AGG);
+    agg_mean_free(AGG);
 }
 
 void show_steps(int w){
-    printf("aggregate_new(%d)\n", w);
-    aggregate * A = aggregate_new(w);
-    aggregate_print(A);
+    printf("agg_mean_new(%d)\n", w);
+    agg_mean_ * A = agg_mean_new(w);
+    agg_mean_print(A);
 
     for(int kk = 0; kk < 5; kk++){
         double v = (double) rand() / (double) RAND_MAX;
-        printf("aggregate_push(A, %f)\n", v);
-        aggregate_push(A, v);
-        aggregate_print(A);
+        printf("agg_mean_push(A, %f)\n", v);
+        agg_mean_push(A, v);
+        agg_mean_print(A);
     }
 
     for(int kk = 0; kk < 5; kk++){
         double v;
-        if(aggregate_eval(A, &v)){
+        if(agg_mean_eval(A, &v)){
             assert(0);
         }
-        printf("aggregate_eval(A) -> %f\n", v);
-        printf("aggregate_pop(A)\n");
-        aggregate_pop(A);
-        aggregate_print(A);
+        printf("agg_mean_eval(A) -> %f\n", v);
+        printf("agg_mean_pop(A)\n");
+        agg_mean_pop(A);
+        agg_mean_print(A);
         v = (double) rand() / (double) RAND_MAX;
-        printf("aggregate_push(A, %f)\n", v);
-        aggregate_push(A, v);
-        aggregate_print(A);
+        printf("agg_mean_push(A, %f)\n", v);
+        agg_mean_push(A, v);
+        agg_mean_print(A);
     }
     printf("Emptying the aggrate\n");
     for(int kk = 0; kk < 5; kk ++){
         double v;
-        if(aggregate_eval(A, &v)){
+        if(agg_mean_eval(A, &v)){
             assert(0);
         }
-        printf("aggregate_eval(A) -> %f\n", v);
-        printf("aggregate_pop(A)\n");
-        aggregate_pop(A);
-        aggregate_print(A);
+        printf("agg_mean_eval(A) -> %f\n", v);
+        printf("agg_mean_pop(A)\n");
+        agg_mean_pop(A);
+        agg_mean_print(A);
     }
-    aggregate_free(A);
+    agg_mean_free(A);
     A = NULL;
     return;
 }

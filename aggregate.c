@@ -8,8 +8,9 @@
 typedef uint64_t u64;
 typedef uint32_t u32;
 
-// There is one #define guarded section per aggregation type below
+// For each aggregation type there is a  #define guarded section below.
 //
+// Each one of them define these things:
 // mitem -- a lifted element, i.e. a monoid element/item.
 // mono0 -- the 0 element in the monoid
 // lift -- convert/lift from input domain to monoid domain
@@ -18,10 +19,11 @@ typedef uint32_t u32;
 // mitem_print -- used by aggregate_print
 
 #ifdef AGGREGATE_MIN
+#define AGGT(x) agg_min_##x
 typedef struct {
     double a; // min value
 } mitem;
-const mitem mono0 = {.a = INFINITY};
+static const mitem mono0 = {.a = INFINITY};
 static mitem lift(double v){
     return (mitem) {.a = v};
 }
@@ -40,6 +42,7 @@ static void mitem_print(mitem a){
 #endif
 
 #ifdef AGGREGATE_MEAN
+#define AGGT(x) agg_mean_##x
 typedef struct {
     double val;
 } el;
@@ -47,7 +50,7 @@ typedef struct {
     u64 n;    // number of elements
     double S; // Sum
 } mitem;
-const mitem mono0 = {.n = 0, .S = 0};
+static const mitem mono0 = {.n = 0, .S = 0};
 static mitem lift(double v){
     return (mitem) {.n = 1, .S = v};
 }
@@ -62,7 +65,8 @@ static void mitem_print(mitem a){
 }
 #endif
 
-#ifdef AGGREGATE_STDDEV
+#ifdef AGGREGATE_STD
+#define AGGT(x) agg_std_##x
 typedef struct {
     double val;
 } el;
@@ -70,8 +74,8 @@ typedef struct {
     u32 n;    // number of elements
     double S; // Sum
     double Q; // Sum of Squares
-} agg;
-const mitem mono0 = {.n = 0, .S = 0, .Q = 0};
+} mitem;
+static const mitem mono0 = {.n = 0, .S = 0, .Q = 0};
 static mitem lift(double v){
     return (mitem) {.n = 1, .S = v, .Q = v*v};
 }
@@ -100,7 +104,7 @@ static void mitem_print(mitem a){
 // Use aggregate_next, and aggrepage_previous to walk the arrays in a
 // Ring-Buffer way.
 
-struct aggregate_struct {
+struct AGGT(struct) {
     mitem Hacc; // aggregate/accumulator for the head elements
     mitem* RB; // Ring buffer with all elemnts
     uint64_t nRB; // number of element in RB
@@ -110,29 +114,29 @@ struct aggregate_struct {
 };
 
 // For navigation around the boundaries
-static u64 previous(const aggregate * A, u64 pos){
+static u64 previous(const AGGT() * A, u64 pos){
     if(pos == 0){
         return A->nRB-1;
     }
     return pos - 1;
 }
 
-static u64 next(const aggregate * A, u64 pos){
+static u64 next(const AGGT() * A, u64 pos){
     if(pos + 1 == A->nRB){
         return 0;
     }
     return pos + 1;
 }
 
-aggregate * aggregate_new(uint64_t max_window_size){
-    aggregate * A = calloc(1, sizeof(aggregate));
+AGGT() * AGGT(new)(uint64_t max_window_size){
+    AGGT() * A = calloc(1, sizeof(AGGT()));
     A->nRB = max_window_size+1;
     A->RB = calloc(A->nRB, sizeof(mitem));
     A->Hacc = mono0;
     return A;
 }
 
-void aggregate_free(aggregate * A){
+void AGGT(free)(AGGT() * A){
     if(A == NULL){
         return;
     }
@@ -141,7 +145,7 @@ void aggregate_free(aggregate * A){
     return;
 }
 
-int aggregate_push(aggregate * A, double val){
+int AGGT(push)(AGGT() * A, double val){
     assert(A != NULL);
     assert(A->RB != NULL);
 
@@ -155,7 +159,7 @@ int aggregate_push(aggregate * A, double val){
     return 0;
 }
 
-int aggregate_pop(aggregate * A){
+int AGGT(pop)(AGGT() * A){
     if(A->H == A->T){ // Empty
         return -1;
     }
@@ -185,7 +189,7 @@ int aggregate_pop(aggregate * A){
     return 0;
 }
 
-int aggregate_eval(const aggregate * A, double  *val){
+int AGGT(eval)(const AGGT() * A, double  *val){
     if(A->T == A->H){ // completely empty
         return -1;
     }
@@ -197,7 +201,7 @@ int aggregate_eval(const aggregate * A, double  *val){
     return 0;
 }
 
-void aggregate_reset(aggregate * A){
+void AGGT(reset)(AGGT() * A){
     A->H = 0;
     A->T = 0;
     A->U = 0;
@@ -210,11 +214,11 @@ void aggregate_reset(aggregate * A){
 
 // Print by insertion order,
 // i.e. tail element first and head element last
-void aggregate_print(const aggregate * A){
+void AGGT(print)(const AGGT() * A){
     assert(A != NULL);
     u64 pos = A->T;
     u64 n_elements = 0;
-    int state = 0; // aggregates
+    int state = 0; // AGGT()s
     printf("---\n");
     while(pos != A->H){
         if(pos == A->U){

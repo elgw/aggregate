@@ -14,15 +14,9 @@ CFLAGS += -fsanitize=address
 endif
 endif
 
-test_mean: aggregate_mean.o test_mean.c
-	$(CC) $(CFLAGS) aggregate_mean.o test_mean.c $(LDFLAGS) -o test_mean
-
-test_min: aggregate_min.o test_min.c
-	$(CC) $(CFLAGS) aggregate_min.o test_min.c $(LDFLAGS) -o test_min
-
-test_stddev: aggregate_stddev.o test_stddev.c
-	$(CC) $(CFLAGS) aggregate_stddev.o test_stddev.c $(LDFLAGS) -o test_stddev
-
+# todo -- merge test_std.c test_min.c into test.c
+test: aggregate_mean.o aggregate_min.o aggregate_std.o test.c
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o test
 
 aggregate_min.o:
 	$(CC) -c $(CFLAGS) -std=c99 -DAGGREGATE_MIN aggregate.c -o aggregate_min.o
@@ -30,5 +24,5 @@ aggregate_min.o:
 aggregate_mean.o:
 	$(CC) -c $(CFLAGS) -std=c99 -DAGGREGATE_MEAN aggregate.c -o aggregate_mean.o
 
-aggregate_stddev.o:
-	$(CC) -c $(CFLAGS) -std=c99 -DAGGREGATE_STDDEV aggregate.c -o aggregate_stddev.o
+aggregate_std.o:
+	$(CC) -c $(CFLAGS) -std=c99 -DAGGREGATE_STD aggregate.c -o aggregate_std.o
