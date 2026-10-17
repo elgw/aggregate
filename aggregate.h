@@ -1,24 +1,10 @@
 #pragma once
 #include <stdint.h>
 
-typedef enum {
-    aggregate_min
-} aggregate_type;
+struct aggregate_struct;
+typedef struct aggregate_struct aggregate;
 
-typedef struct {
-    double value;
-    double aggregate;
-} aggregate_pair;
-
-typedef struct {
-    aggregate_pair * pairs;
-    uint64_t n, capacity;
-    uint64_t H; // head = Writepos
-    uint64_t T; // tail = Readpos
-    uint64_t U; // update horizon
-} aggregate;
-
-aggregate * aggregate_new(uint64_t max_window_size, aggregate_type t);
+aggregate * aggregate_new(uint64_t max_window_size);
 void aggregate_free(aggregate * );
 int aggregate_push(aggregate * A, double value);
 int aggregate_pop(aggregate * A);

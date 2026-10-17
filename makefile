@@ -1,4 +1,5 @@
 CFLAGS = -Wall -Wextra -Werror
+LDFLAGS = -lm
 
 OPT?=0
 SAN?=0

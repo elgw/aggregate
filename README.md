@@ -8,8 +8,8 @@ nicely!
 
 Push(1)
 
-|  1
-| [1]
+|  1       << -- upper row: value
+| [1]      << -- lower row: aggregates
 
 
 Push(3)
@@ -25,13 +25,19 @@ Push(4)
 
 Pop()
 
- 3  2 4 |
-[2] 2 4 |
+ 3  2 4 |   << note, the value left of the | does not matter any more
+[2] 2 4 |   << at least not for min
 
 Push(1)
 
  3  2 4 |  1
 [2] 2 4 | [1]
+
+We could also just show it like this
+
+        |  1
+[2] 2 4 | [1]
+
 
 ...
 
@@ -40,7 +46,7 @@ Push(1)
 
 Not as general as the other versions (yet).
 
-[HTTP://orlp.net/blog/two-stack-sliding-window-aggregation/]
+[https://orlp.net/blog/two-stack-sliding-window-aggregation/]
 [https://stackoverflow.com/questions/4802038/implement-a-queue-in-which-push-rear-pop-front-and-get-min-are-all-consta/4802260#4802260]
 [https://www.cs.cmu.edu/afs/cs.cmu.edu/academic/class/15750-s03/www/amortized-analysis.txt]
 [https://hirzels.com/martin/papers/vldb15-chrprop-agg.pdf]

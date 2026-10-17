@@ -2,9 +2,45 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "aggregate.h"
 
 typedef uint64_t u64;
+
+typedef struct {
+    double val;
+    double agg;
+} agg;
+
+// combine, lift, lower
+const agg agg0 = {.val = INFINITY, .agg = INFINITY};
+const agg agg1 = {.val = INFINITY, .agg = INFINITY};
+static agg lift(double v){
+    return (agg) {.val = v, .agg = v};
+    //agg r = {v, v}; return r;
+}
+
+static double lower(agg a){
+    return a.val;
+}
+
+static agg combine(agg a, agg b){
+    if(a.agg < b.agg){
+        return a;
+    }
+    return b;
+}
+
+// Algorithm below
+
+struct aggregate_struct {
+    agg * pairs;
+    uint64_t n, capacity;
+    uint64_t H; // head = Writepos
+    agg aggH; // aggregate of the head elements
+    uint64_t T; // tail = Readpos
+    uint64_t U; // update horizon
+};
 
 
 static u64 previous(const aggregate * A, u64 pos){
@@ -21,20 +57,11 @@ static u64 next(const aggregate * A, u64 pos){
     return pos + 1;
 }
 
-static double min_double(double a, double b){
-    if(a < b){
-        return a;
-    }
-    return b;
-}
-
-aggregate * aggregate_new(uint64_t max_window_size, aggregate_type t){
-    if(t != aggregate_min){
-        return NULL;
-    }
+aggregate * aggregate_new(uint64_t max_window_size){
     aggregate * A = calloc(1, sizeof(aggregate));
     A->capacity = max_window_size+1;
-    A->pairs = calloc(A->capacity, sizeof(aggregate_pair));
+    A->pairs = calloc(A->capacity, sizeof(agg));
+    A->aggH = agg0;
     return A;
 }
 
@@ -47,78 +74,61 @@ void aggregate_free(aggregate * A){
     return;
 }
 
-int aggregate_push(aggregate * A, double value){
+int aggregate_push(aggregate * A, double val){
+    //printf("Pushing %f\n", val);
     assert(A != NULL);
     assert(A->pairs != NULL);
 
-    if(next(A, A->H) == A->T){ // full
+    // Since the buffer has a fixed size, it can happen that
+    // it is full. We might want to crash here...
+    if(next(A, A->H) == A->T){
         return -1;
     }
-    A->pairs[A->H].value = value;
-
-    if(A->H != A->T){ // not empty
-        value = min_double(value, A->pairs[previous(A, A->H)].aggregate);
-        //printf("uvalue: %f\n", value);
-    }
-    A->pairs[A->H].aggregate = value;
-    #if 0
-    printf("NEW pos: %lu value = %f, agg = %f\n",
-           A->H,
-           A->pairs[A->H].value,
-           A->pairs[A->H].aggregate);
-    #endif
+    A->pairs[A->H] = lift(val);
+    A->aggH = combine(A->aggH, A->pairs[A->H]);
     A->H = next(A, A->H);
     return 0;
 }
 
 int aggregate_pop(aggregate * A){
+    // The buffer might be empty
     if(A->H == A->T){
         return -1;
     }
+
     int rebuild = 0;
     if(A->T == A->U){
         rebuild = 1;
     }
-    #if 0
-    printf("POPPED (%f, %f)\n",
-           A->pairs[A->T].value,
-           A->pairs[A->T].aggregate);
-    #endif
     A->T = next(A, A->T); // discard last element
-    if(A->T == A->H){ // empty
+    if(A->H == A->T){ // empty now?
+        A->aggH = agg0;
         return 0;
     }
 
-    // Start from head and walk to tail, while updating the aggregate
-    //printf("REBUILD INPUT\n");
-    //aggregate_print(A);
     if(rebuild){
+        agg a = agg1;
         u64 idx = previous(A, A->H);
-        A->U = idx;
-        A->pairs[idx].aggregate = A->pairs[idx].value;
-        //printf("Rebuilding, starting at %lu until %lu\n", idx, A->T);
-        while(idx != A->T){
-            u64 idx2 = previous(A, idx);
-            //printf("idx %lu vs %lu\n", idx, idx2);
-            A->pairs[idx2].aggregate = min_double(A->pairs[idx].aggregate,
-                                                 A->pairs[idx2].value);
-            idx = idx2;
+        u64 stop_idx = previous(A, A->T);
+        while(idx != stop_idx){
+            a = combine(a, A->pairs[idx]);
+            A->pairs[idx] = a;
+            idx = previous(A, idx);
         }
-        //printf("REBUILD OUTPUT\n");
-        //aggregate_print(A);
+        A->aggH = agg1;
+        A->U = A->H;
     }
 
     return 0;
 }
 
-int aggregate_eval(const aggregate * A, double  *value){
-    if(A->H == A->T){
-        return -1; // empty
+int aggregate_eval(const aggregate * A, double  *val){
+    // TODO: this should be when the tail is empty
+    // how can we know if the tail is empty?
+    if(A->T == A->U){  // empty
+        *val = lower(A->aggH);
     }
-    // finalize(combine(head, tail))
-    *value = min_double(
-                        A->pairs[previous(A, A->H)].aggregate,
-                        A->pairs[A->T].aggregate);
+    *val = lower(combine(A->aggH, A->pairs[A->T]));
     return 0;
 }
 
@@ -127,7 +137,7 @@ void aggregate_reset(aggregate * A){
     A->T = 0;
     A->U = 0;
     #ifndef NDEBUG
-    memset(A->pairs, 0, A->capacity*sizeof(aggregate_pair));
+    memset(A->pairs, 0, A->capacity*sizeof(agg));
     #endif
     return;
 }
@@ -136,13 +146,17 @@ void aggregate_reset(aggregate * A){
 // i.e. tail element first and head element last
 void aggregate_print(const aggregate * A){
     u64 pos = A->T;
-    double minvalue = A->pairs[A->T].value;
+    double minval = INFINITY;
+    u64 n_elements = 0;
     while(pos != A->H){
+        if(minval > A->pairs[A->T].val){
+            minval = A->pairs[A->T].val;
+        }
         printf("%lu (%.1f, %.1f)", pos,
-               A->pairs[pos].value,
-               A->pairs[pos].aggregate);
-        if(A->pairs[pos].value < minvalue){
-            minvalue = A->pairs[pos].value;
+               A->pairs[pos].val,
+               A->pairs[pos].agg);
+        if(A->pairs[pos].val < minval){
+            minval = A->pairs[pos].val;
         }
         if(A->T == pos){
             printf("T");
@@ -155,9 +169,17 @@ void aggregate_print(const aggregate * A){
         }
         printf("\n");
         pos = next(A, pos);
+        n_elements++;
     }
+    printf("aggH: (%f, %f)\n", A->aggH.val, A->aggH.agg);
     printf("---\n");
-    double a_minvalue;
-    aggregate_eval(A, &a_minvalue);
-    assert(a_minvalue  == minvalue);
+    double a_minval;
+    aggregate_eval(A, &a_minval);
+    if(n_elements > 0){
+        if(a_minval != minval){
+            printf("Minval found in the data: %f\n", minval);
+            printf("Minval reported by agg:   %f\n", a_minval);
+            assert(0);
+        }
+    }
 }

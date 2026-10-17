@@ -17,35 +17,59 @@ static double min_double(double a, double b){
 }
 
 void test(int w){
-    printf("Testing with window size = %d\n", w);
-    aggregate * AGG = aggregate_new(w, aggregate_min);
+    int verbose =  1;
+    if(verbose > 0){
+        printf("Testing with window size = %d\n", w);
+    }
+    aggregate * AGG = aggregate_new(w);
 
     u64 t0, t1;
     u32 cpuid;
 
-    printf("Add and remove one element\n");
+    if(verbose > 1){
+        printf("Add and remove one element\n");
+    }
     for(int kk = 0; kk < 3*w; kk++){
         double v = kk+1.1;
+        if(verbose > 1){
+            printf("Adding %f\n", v);
+        }
         aggregate_push(AGG, v);
+        if(verbose > 2){
+            aggregate_print(AGG);
+        }
         double r;
         aggregate_eval(AGG, &r);
         assert(v == r);
+        if(verbose > 1){
+            printf("Popping\n");
+        }
         if(aggregate_pop(AGG)){
             assert(0);
+        }
+        if(verbose > 2){
+            aggregate_print(AGG);
         }
     }
 
     aggregate_reset(AGG);
-    printf("Fill the buffer\n");
+    if(verbose > 1){
+        printf("Fill the buffer\n");
+    }
     for(int kk = 0; kk < w; kk++){
         aggregate_push(AGG, 10.0 - kk);
+        if(verbose > 2){
+            aggregate_print(AGG);
+        }
     }
 
     u64 n_operations = 0;
     u64 t_pop = 0;
     u64 t_push = 0;
 
-    printf("EVAL_POP_PUSH cycle\n");
+    if(verbose > 1){
+        printf("EVAL_POP_PUSH cycle\n");
+    }
     int n_test = 100000;
     for(int kk = 0; kk < n_test; kk++){
         double minvalue = 1e99;
@@ -54,6 +78,8 @@ void test(int w){
             t0 = __rdtscp(&cpuid);
             aggregate_pop(AGG);
             t1 = __rdtscp(&cpuid);
+            //printf("After pop\n");
+            //aggregate_print(AGG);
             t_pop += t1 - t0;
 
             double v = 10.0 * (double) rand() / (double) RAND_MAX;
@@ -63,15 +89,17 @@ void test(int w){
             aggregate_push(AGG, v);
             t1 = __rdtscp(&cpuid);
             t_push += t1 - t0;
+            //printf("After push\n");
+            //aggregate_print(AGG);
             //aggregate_print(AGG);
         }
         double r;
         aggregate_eval(AGG, &r);
         assert( r == minvalue );
     }
-
-    printf("Push: %.1f\n", (double) t_push / (double) n_operations);
-    printf("Pop:  %.1f\n", (double) t_pop  / (double) n_operations);
+    printf("   Results after %lu operations\n", n_operations);
+    printf("   Avg. Push Time: %.1f\n", (double) t_push / (double) n_operations);
+    printf("   Avg. Pop Time:  %.1f\n", (double) t_pop  / (double) n_operations);
 
     aggregate_free(AGG);
 }
