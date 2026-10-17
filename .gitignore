@@ -1,0 +1,5 @@
+*.pdf
+*.o
+test_mean
+test_min
+test_stddev
