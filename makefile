@@ -14,6 +14,21 @@ CFLAGS += -fsanitize=address
 endif
 endif
 
+test_mean: aggregate_mean.o test.c
+	$(CC) $(CFLAGS) aggregate_mean.o test_mean.c $(LDFLAGS) -o test_mean
 
-test: aggregate.c test.c
-	$(CC) $(CFLAGS) aggregate.c test.c $(LDFLAGS) -o test
+test_min: aggregate_min.o test.c
+	$(CC) $(CFLAGS) aggregate_min.o test_min.c $(LDFLAGS) -o test_min
+
+test_stddev: aggregate_stddev.o test.c
+	$(CC) $(CFLAGS) aggregate_stddev.o test_min.c $(LDFLAGS) -o test_stddev
+
+
+aggregate_min.o:
+	$(CC) -c $(CFLAGS) -DAGGREGATE_MIN aggregate.c -o aggregate_min.o
+
+aggregate_mean.o:
+	$(CC) -c $(CFLAGS) -DAGGREGATE_MEAN aggregate.c -o aggregate_mean.o
+
+aggregate_stddev.o:
+	$(CC) -c $(CFLAGS) -DAGGREGATE_STDDEV aggregate.c -o aggregate_stddev.o

@@ -1,67 +1,74 @@
-Implemented using a circular/ring buffer because then it made sense to
-me what was going on. It should be possible to illustrate this quite
-nicely!
+#  Sliding-Window Aggregation with Ring Buffer And (non-tagged) Union
 
-```
+Context: Sliding-Window Aggregation, described in [^1] and [^2] see
+also [^3].
 
-[ ] - is used to mark the possible min elements
+Observation: For a window of $`w`$ elements, the two-stack approach
+maintains two lists of size $`w`$, one for elements and one for
+aggregates. That seems wasteful since these two lists contain at most
+$`w`$ elements in total.
 
-Push(1)
+Tested here: A single list, implemented as a circular/ring buffer
+where each item can store either an element or an aggregate. This
+union is implicit, i.e. no tag is needed since the type can be
+inferred.
 
-|  1       << -- upper row: value
-| [1]      << -- lower row: aggregates
+## Results
 
+No big turn down yet. Seems fast but no fair comparisons have been
+performed. All I can offer is the timings of my code on my machine, vs
+that of [^2], evaluated on their system.
 
-Push(3)
+The table will show how many ticks it takes (`__rdtscp`) in average
+for each cycle of **pop**, **push** and **eval** using a window size
+of $`2^14`$ elements.
 
-| 1  3
-| 1 [1]
+Two-Stacks result taken from Table 2 in [^2]. CPU: Intel Xeon E5-2680
+at 2.7 GHz,  g++ version 4.8.3.
 
-Push(2)
-Push(4)
-
-| 1 3 2  4
-| 1 1 1 [1]
-
-Pop()
-
- 3  2 4 |   << note, the value left of the | does not matter any more
-[2] 2 4 |   << at least not for min
-
-Push(1)
-
- 3  2 4 |  1
-[2] 2 4 | [1]
-
-We could also just show it like this
-
-        |  1
-[2] 2 4 | [1]
-
-
-...
-
-```
-
-
-Not as general as the other versions (yet).
-
-[https://orlp.net/blog/two-stack-sliding-window-aggregation/]
-[https://stackoverflow.com/questions/4802038/implement-a-queue-in-which-push-rear-pop-front-and-get-min-are-all-consta/4802260#4802260]
-[https://www.cs.cmu.edu/afs/cs.cmu.edu/academic/class/15750-s03/www/amortized-analysis.txt]
-[https://hirzels.com/martin/papers/vldb15-chrprop-agg.pdf]
-
+Timings for this code: AMD Ryzen 3700X, gcc version 13.3.0.
 
 ``` shell
-Testing with window size = 49
-Add and remove one element
-Fill the buffer
-EVAL_POP_PUSH cycle
-Push: 73.4
-Pop:  73.0
+make -B OPT=1 test_mean -B && ./test_mean
+make -B OPT=1 test_min -B && ./test_min
+make -B OPT=1 test_min -B && ./test_stddev
 ```
 
-If I'm reading table2 correct in [^1] then this is faster.
+|           | Two-Stacks | This |
+|----------:|-----------:|-----:|
+|   Max/Min |        125 |   80 |
+| ArithMean |        165 |   73 |
+|    StdDev |        200 |  115 |
 
-[^1]:
-    [DOI:10.1145/3093742.3093925](https://dl.acm.org/doi/epdf/10.1145/3093742.3093925)
+
+# Memory Layout
+
+If an aggregate use 4X the memory of an element, let's draw the
+aggregate as `AAAA` and an element as `E___`, where an underscore
+indicates unused memory. We can also draw unused slots in the ring
+buffer as `____`. When there are 5 elements in the data structures, of
+capacity 7, 3 of them are in the "Front" and 2 in the "Back":
+
+```
+
+aaggregate.RB = [___ ,AAA, AAA, AAA, E__, E__, ___]
+                       |           |            |
+                      (T)ail       |           (W)ritepos
+                                  (U)pdate Horizon
+```
+
+
+# To do ...
+
+- [ ] Check that it is correct.
+- [ ] Make it useful; a little, or some more macros could help (so
+      much nicer to do it a language with templates or metaprogramming
+      ... ).
+- [ ] Find a use for it :)
+
+# References
+
+[^1]: Kanat Tangwongsan, Martin Hirzel, Scott Schneider, and Kun-Lung Wu. 2015. General incremental sliding-window aggregation. Proc. VLDB Endow. 8, 7 (February 2015), 702–713. https://doi.org/10.14778/2752939.2752940
+[^2]: Kanat Tangwongsan, Martin Hirzel, and Scott Schneider. 2017. Low-Latency Sliding-Window Aggregation in Worst-Case Constant Time. In Proceedings of the 11th ACM International Conference on Distributed and Event-based Systems (DEBS '17). Association for Computing Machinery, New York, NY, USA, 66–77. https://doi.org/10.1145/3093742.3093925
+[^3]: Orson R. L. Peters, Two-Stack Sliding-Window Aggregation,
+    [https://orlp.net/blog/two-stack-sliding-window-aggregation/]

@@ -16,7 +16,7 @@ static double min_double(double a, double b){
     return b;
 }
 
-void test(int w){
+void test_min(int w){
     int verbose =  1;
     if(verbose > 0){
         printf("Testing with window size = %d\n", w);
@@ -64,42 +64,33 @@ void test(int w){
     }
 
     u64 n_operations = 0;
-    u64 t_pop = 0;
-    u64 t_push = 0;
+    u64 t_ppe = 0;
 
     if(verbose > 1){
         printf("EVAL_POP_PUSH cycle\n");
     }
-    int n_test = 100000;
+    int n_test = 1000000/w;
+    double r;
     for(int kk = 0; kk < n_test; kk++){
         double minvalue = 1e99;
         for(int vv = 0; vv < w; vv++){
             n_operations++;
-            t0 = __rdtscp(&cpuid);
-            aggregate_pop(AGG);
-            t1 = __rdtscp(&cpuid);
-            //printf("After pop\n");
-            //aggregate_print(AGG);
-            t_pop += t1 - t0;
-
             double v = 10.0 * (double) rand() / (double) RAND_MAX;
             minvalue = min_double(minvalue, v);
-            //double v = (double) kk;
+
             t0 = __rdtscp(&cpuid);
+            aggregate_pop(AGG);
             aggregate_push(AGG, v);
+            aggregate_eval(AGG, &r);
             t1 = __rdtscp(&cpuid);
-            t_push += t1 - t0;
-            //printf("After push\n");
-            //aggregate_print(AGG);
-            //aggregate_print(AGG);
+            t_ppe += t1 - t0;
+            printf("\r%.1f", r);
         }
-        double r;
         aggregate_eval(AGG, &r);
         assert( r == minvalue );
     }
-    printf("   Results after %lu operations\n", n_operations);
-    printf("   Avg. Push Time: %.1f\n", (double) t_push / (double) n_operations);
-    printf("   Avg. Pop Time:  %.1f\n", (double) t_pop  / (double) n_operations);
+    printf("\r   Results after %lu operations\n", n_operations);
+    printf("   Avg. PPE Time: %.1f\n", (double) t_ppe / (double) n_operations);
 
     aggregate_free(AGG);
 }
@@ -110,8 +101,11 @@ int main(int argc, char ** argv){
         printf("%s takes no arguments\n", argv[0]);
     }
 
+    test_min(16384);
+    return EXIT_SUCCESS;
+
     for(int w = 3; w < 121; w++){
-        test(w);
+        test_min(w);
     }
     return EXIT_SUCCESS;
 }

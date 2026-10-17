@@ -6,36 +6,117 @@
 #include "aggregate.h"
 
 typedef uint64_t u64;
+typedef uint32_t u32;
 
+#ifdef AGGREGATE_MIN
 
-
-#if 1 // For MINIMUM
-// Note; We only need one of these for min
 typedef struct {
     double val;
-    double agg;
+} el;
+
+// Aggregator for Min value, only one value needed
+typedef struct {
+    double a;
 } agg;
+
 // combine, lift, lower
-const agg agg0 = {.val = INFINITY, .agg = INFINITY};
-const agg agg1 = {.val = INFINITY, .agg = INFINITY};
+const agg agg0 = {.a = INFINITY};
+const agg agg1 = {.a = INFINITY};
+
 static agg lift(double v){
-    return (agg) {.val = v, .agg = v};
+    return (agg) {.a = v};
 }
+
 static double lower(agg a){
-    return a.val;
+    return a.a;
 }
+
 static agg combine(agg a, agg b){
-    if(a.agg < b.agg){
+    if(a.a < b.a){
         return a;
     }
     return b;
+}
+
+static void agg_print(agg a){
+    printf("[.a=%f]", a.a);
+}
+#endif
+
+#ifdef AGGREGATE_MEAN
+
+typedef struct {
+    double val;
+} el;
+
+typedef struct {
+    u32 n;    // number of elements
+    double S; // Sum
+} agg;
+
+// combine, lift, lower
+const agg agg0 = {.n = 0, .S = 0};
+const agg agg1 = {.n = 0, .S = 0};
+
+static agg lift(double v){
+    return (agg) {.n = 1, .S = v};
+}
+
+static double lower(agg a){
+    return a.S / a.n;
+}
+
+static agg combine(agg a, agg b){
+    return (agg) {.n=a.n + b.n, .S = a.S + b.S};
+}
+
+static void agg_print(agg a){
+    printf("[.n=%u, .S=%f]", a.n, a.S);
+}
+#endif
+
+#ifdef AGGREGATE_STDDEV
+
+typedef struct {
+    double val;
+} el;
+
+typedef struct {
+    u32 n;    // number of elements
+    double S; // Sum
+    double Q; // Sum of Squares
+} agg;
+
+// combine, lift, lower
+const agg agg0 = {.n = 0, .S = 0, .Q = 0};
+const agg agg1 = {.n = 0, .S = 0, .Q = 0};
+
+static agg lift(double v){
+    return (agg) {.n = 1, .S = v, .Q = v*v};
+}
+
+static double lower(agg a){
+    return sqrt( 1.0 / (double) a.n * (a.Q - a.S*a.S)/(double) a.n);
+}
+
+static agg combine(agg a, agg b){
+    return (agg) {.n=a.n + b.n, .S = a.S + b.S, .Q = a.Q + b.Q};
+}
+
+static void agg_print(agg a){
+    printf("[.n=%u, .S=%f]", a.n, a.S);
 }
 #endif
 
 // Algorithm below
 
+typedef union {
+    agg agg;
+    el el;
+} item;
+
 struct aggregate_struct {
-    agg * pairs; // No: this is a list of union(value, agg)
+    item* RB; // Ring buffer
     uint64_t n, capacity;
     uint64_t H; // head = Writepos
     agg aggH; // aggregate of the head elements
@@ -61,7 +142,7 @@ static u64 next(const aggregate * A, u64 pos){
 aggregate * aggregate_new(uint64_t max_window_size){
     aggregate * A = calloc(1, sizeof(aggregate));
     A->capacity = max_window_size+1;
-    A->pairs = calloc(A->capacity, sizeof(agg));
+    A->RB = calloc(A->capacity, sizeof(agg));
     A->aggH = agg0;
     return A;
 }
@@ -70,7 +151,7 @@ void aggregate_free(aggregate * A){
     if(A == NULL){
         return;
     }
-    free(A->pairs);
+    free(A->RB);
     free(A);
     return;
 }
@@ -78,15 +159,15 @@ void aggregate_free(aggregate * A){
 int aggregate_push(aggregate * A, double val){
     //printf("Pushing %f\n", val);
     assert(A != NULL);
-    assert(A->pairs != NULL);
+    assert(A->RB != NULL);
 
     // Since the buffer has a fixed size, it can happen that
     // it is full. We might want to crash here...
     if(next(A, A->H) == A->T){
         return -1;
     }
-    A->pairs[A->H] = lift(val);
-    A->aggH = combine(A->aggH, A->pairs[A->H]);
+    A->RB[A->H].agg = lift(val);
+    A->aggH = combine(A->aggH, A->RB[A->H].agg);
     A->H = next(A, A->H);
     return 0;
 }
@@ -112,8 +193,8 @@ int aggregate_pop(aggregate * A){
         u64 idx = previous(A, A->H);
         u64 stop_idx = previous(A, A->T);
         while(idx != stop_idx){
-            a = combine(a, A->pairs[idx]);
-            A->pairs[idx] = a;
+            a = combine(a, A->RB[idx].agg);
+            A->RB[idx].agg = a;
             idx = previous(A, idx);
         }
         A->aggH = agg1;
@@ -128,8 +209,9 @@ int aggregate_eval(const aggregate * A, double  *val){
     // how can we know if the tail is empty?
     if(A->T == A->U){  // empty
         *val = lower(A->aggH);
+        return 0;
     }
-    *val = lower(combine(A->aggH, A->pairs[A->T]));
+    *val = lower(combine(A->aggH, A->RB[A->T].agg));
     return 0;
 }
 
@@ -138,7 +220,7 @@ void aggregate_reset(aggregate * A){
     A->T = 0;
     A->U = 0;
     #ifndef NDEBUG
-    memset(A->pairs, 0, A->capacity*sizeof(agg));
+    memset(A->RB, 0, A->capacity*sizeof(agg));
     #endif
     return;
 }
@@ -150,14 +232,13 @@ void aggregate_print(const aggregate * A){
     double minval = INFINITY;
     u64 n_elements = 0;
     while(pos != A->H){
-        if(minval > A->pairs[A->T].val){
-            minval = A->pairs[A->T].val;
+        if(minval > A->RB[A->T].el.val){
+            minval = A->RB[A->T].el.val;
         }
-        printf("%lu (%.1f, %.1f)", pos,
-               A->pairs[pos].val,
-               A->pairs[pos].agg);
-        if(A->pairs[pos].val < minval){
-            minval = A->pairs[pos].val;
+        printf("%lu ", pos);;
+        agg_print(A->RB[pos].agg);
+        if(A->RB[pos].el.val < minval){
+            minval = A->RB[pos].el.val;
         }
         if(A->T == pos){
             printf("T");
@@ -172,15 +253,8 @@ void aggregate_print(const aggregate * A){
         pos = next(A, pos);
         n_elements++;
     }
-    printf("aggH: (%f, %f)\n", A->aggH.val, A->aggH.agg);
+    printf("aggH: ");
+    agg_print(A->aggH);
+    printf("\n");
     printf("---\n");
-    double a_minval;
-    aggregate_eval(A, &a_minval);
-    if(n_elements > 0){
-        if(a_minval != minval){
-            printf("Minval found in the data: %f\n", minval);
-            printf("Minval reported by agg:   %f\n", a_minval);
-            assert(0);
-        }
-    }
 }
