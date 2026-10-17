@@ -20,8 +20,8 @@ test_mean: aggregate_mean.o test_mean.c
 test_min: aggregate_min.o test_min.c
 	$(CC) $(CFLAGS) aggregate_min.o test_min.c $(LDFLAGS) -o test_min
 
-test_stddev: aggregate_stddev.o test.c
-	$(CC) $(CFLAGS) aggregate_stddev.o test_min.c $(LDFLAGS) -o test_stddev
+test_stddev: aggregate_stddev.o test_stddev.c
+	$(CC) $(CFLAGS) aggregate_stddev.o test_stddev.c $(LDFLAGS) -o test_stddev
 
 
 aggregate_min.o:

@@ -96,15 +96,20 @@ static agg lift(double v){
 }
 
 static double lower(agg a){
-    return sqrt( 1.0 / (double) a.n * (a.Q - a.S*a.S)/(double) a.n);
+    if(a.n == 0){
+        return 0.0;
+    }
+    return sqrt( 1.0 / (double) a.n * (a.Q - a.S*a.S/(double) a.n));
 }
 
 static agg combine(agg a, agg b){
-    return (agg) {.n=a.n + b.n, .S = a.S + b.S, .Q = a.Q + b.Q};
+    return (agg) {.n=  a.n + b.n,
+                  .S = a.S + b.S,
+                  .Q = a.Q + b.Q};
 }
 
 static void agg_print(agg a){
-    printf("[.n=%u, .S=%f]", a.n, a.S);
+    printf("[.n=%u, .S=%f .Q=%f]", a.n, a.S, a.Q);
 }
 #endif
 

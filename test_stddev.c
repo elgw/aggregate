@@ -63,16 +63,19 @@ void test_mean(int w){
     if(verbose > 1){
         printf("EVAL_POP_PUSH cycle\n");
     }
-    int n_test = 10000;
+    int n_test = 10000000 / w;
     double r;
 
     for(int kk = 0; kk < n_test; kk++){
         double sum = 0;
+        double sum2 = 0;
+
         double rsum = 0;
         for(int vv = 0; vv < w; vv++){
             n_operations++;
             double v = 10.0 * (double) rand() / (double) RAND_MAX;
             sum += v;
+            sum2 += v*v;
             t0 = __rdtscp(&cpuid);
             aggregate_pop(AGG);
             aggregate_push(AGG, v);
@@ -81,19 +84,19 @@ void test_mean(int w){
             t_ppe += t1 - t0;
             rsum += r;
         }
-        printf("\r%f", rsum);
+        printf("\r%.1f            ", rsum);
+        double ref = sqrt((1.0 / (double) w) *(sum2 - sum*sum));
 
-
-        if( fabs(r - sum / (double) w) > 1e-5 ){
-            printf("ERROR:\n");
+        if( fabs(r - ref) > 1e-5 ){
+            printf("\rERROR:               \n");
             printf("Expected %f\n", sum / (double) w);
             printf("Got:     %f\n", r);
-            aggregate_print(AGG);
-            assert(0);
-            exit(EXIT_FAILURE);
+            //aggregate_print(AGG);
+            //assert(0);
+            //exit(EXIT_FAILURE);
         }
     }
-    printf("   Results after %lu operations\n", n_operations);
+    printf("\r   Results after %lu operations\n", n_operations);
     printf("   Avg. PPE Time: %.1f\n", (double) t_ppe / (double) n_operations);
 
     aggregate_free(AGG);

@@ -21,7 +21,7 @@ that of [^2], evaluated on their system.
 
 The table will show how many ticks it takes (`__rdtscp`) in average
 for each cycle of **pop**, **push** and **eval** using a window size
-of $`2^14`$ elements.
+of $`2^{14}`$ elements.
 
 Two-Stacks result taken from Table 2 in [^2]. CPU: Intel Xeon E5-2680
 at 2.7 GHz,  g++ version 4.8.3.
@@ -38,7 +38,7 @@ make -B OPT=1 test_min -B && ./test_stddev
 |----------:|-----------:|-----:|
 |   Max/Min |        125 |   80 |
 | ArithMean |        165 |   73 |
-|    StdDev |        200 |  115 |
+|    StdDev |        200 |  107 |
 
 
 # Memory Layout
@@ -46,8 +46,10 @@ make -B OPT=1 test_min -B && ./test_stddev
 If an aggregate use 4X the memory of an element, let's draw the
 aggregate as `AAAA` and an element as `E___`, where an underscore
 indicates unused memory. We can also draw unused slots in the ring
-buffer as `____`. When there are 5 elements in the data structures, of
-capacity 7, 3 of them are in the "Front" and 2 in the "Back":
+buffer as `____`.
+
+With 5 elements in the data structures of capacity 7; 3 at the "Front"
+and 2 in the "Back", the layout is like this (showing without wrap around):
 
 ```
 
@@ -56,7 +58,6 @@ aaggregate.RB = [___ ,AAA, AAA, AAA, E__, E__, ___]
                       (T)ail       |           (W)ritepos
                                   (U)pdate Horizon
 ```
-
 
 # To do ...
 
