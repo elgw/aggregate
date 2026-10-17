@@ -1,4 +1,4 @@
-#  Sliding-Window Aggregation with Ring Buffer And (non-tagged) Union
+#  Sliding-Window Aggregation with Ring Buffer
 
 Context: Sliding-Window Aggregation, described in [^1] and [^2] see
 also [^3]. The background will not be repeated here.
@@ -9,14 +9,12 @@ aggregates. That seems wasteful since these two lists contain at most
 $`w`$ elements in total.
 
 Tested here: A single list, implemented as a circular/ring buffer
-where each item can store either an element or an aggregate. No tag is
-needed for the union since the type can be inferred.
 
 ## Results
 
-No big turn down yet. Seems fast but no fair comparisons have been
-performed. All I can offer is the timings of my code on my machine, vs
-that of [^2], evaluated on their system.
+Quick tests shows reasonable performance. At the moment there are
+timings for my code run on my machine, vs that of [^2], evaluated on
+their system.
 
 The table will show how many ticks it takes (`__rdtscp`) in average
 for each cycle of **pop**, **push** and **eval** using a window size
@@ -28,8 +26,8 @@ at 2.7 GHz,  g++ version 4.8.3.
 Timings for this code: AMD Ryzen 3700X, gcc version 13.3.0.
 
 ``` shell
-make -B OPT=1 test_mean -B && ./test_mean
 make -B OPT=1 test_min -B  && ./test_min
+make -B OPT=1 test_mean -B && ./test_mean
 make -B OPT=1 test_min -B  && ./test_stddev
 ```
 
@@ -42,24 +40,25 @@ make -B OPT=1 test_min -B  && ./test_stddev
 
 ## Implementation / Memory Layout
 
-If an aggregate use 4X the memory of an element, let's draw the
-aggregate as `AAAA` and an element as `E___`, where an underscore
-indicates unused memory. We can also draw unused slots in the ring
-buffer as `____`.
+Unused space shown as `____`, an accumulator is denote `MAC` and an
+element, barely lifted is denoted `LEL`.
 
 With 5 elements in the data structures of capacity 7; 3 at the "Front"
-and 2 in the "Back", the layout is like this (showing without wrap around):
+and 2 in the "Back", the layout could look like this:
 
 ```
-aggH = [AAA]
+Hacc = [MAC]
          |
         Accumulator for the head elements marked below
-                         >---------<
-RB  = [___ ,AAA, AAA, AAA, E__, E__, ___]
-             |           |            |
-            (T)ail       |           (H)head
-                        (U)pdate Horizon
+                          >--------<
+RB  = [___ ,MAC, MAC, MAC, LEL, LEL), ___]
+             |              |         |
+            (T)ail          |        (H)head
+                           (U)pdate Horizon /
+                           First "normal" element
 ```
+
+A call to `accumulate_eval` will return
 
 ## To do ...
 

@@ -99,12 +99,54 @@ void test_mean(int w){
     aggregate_free(AGG);
 }
 
+void show_steps(int w){
+    printf("aggregate_new(%d)\n", w);
+    aggregate * A = aggregate_new(w);
+    aggregate_print(A);
+
+    for(int kk = 0; kk < 5; kk++){
+        double v = (double) rand() / (double) RAND_MAX;
+        printf("aggregate_push(A, %f)\n", v);
+        aggregate_push(A, v);
+        aggregate_print(A);
+    }
+
+    for(int kk = 0; kk < 5; kk++){
+        double v;
+        if(aggregate_eval(A, &v)){
+            assert(0);
+        }
+        printf("aggregate_eval(A) -> %f\n", v);
+        printf("aggregate_pop(A)\n");
+        aggregate_pop(A);
+        aggregate_print(A);
+        v = (double) rand() / (double) RAND_MAX;
+        printf("aggregate_push(A, %f)\n", v);
+        aggregate_push(A, v);
+        aggregate_print(A);
+    }
+    printf("Emptying the aggrate\n");
+    for(int kk = 0; kk < 5; kk ++){
+        double v;
+        if(aggregate_eval(A, &v)){
+            assert(0);
+        }
+        printf("aggregate_eval(A) -> %f\n", v);
+        printf("aggregate_pop(A)\n");
+        aggregate_pop(A);
+        aggregate_print(A);
+    }
+    aggregate_free(A);
+    A = NULL;
+    return;
+}
+
 
 int main(int argc, char ** argv){
     if(argc > 1){
         printf("%s takes no arguments\n", argv[0]);
     }
-
+    show_steps(5);
     test_mean(16384); // 2^14
     return EXIT_SUCCESS;
 

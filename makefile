@@ -25,10 +25,10 @@ test_stddev: aggregate_stddev.o test_stddev.c
 
 
 aggregate_min.o:
-	$(CC) -c $(CFLAGS) -DAGGREGATE_MIN aggregate.c -o aggregate_min.o
+	$(CC) -c $(CFLAGS) -std=c99 -DAGGREGATE_MIN aggregate.c -o aggregate_min.o
 
 aggregate_mean.o:
-	$(CC) -c $(CFLAGS) -DAGGREGATE_MEAN aggregate.c -o aggregate_mean.o
+	$(CC) -c $(CFLAGS) -std=c99 -DAGGREGATE_MEAN aggregate.c -o aggregate_mean.o
 
 aggregate_stddev.o:
-	$(CC) -c $(CFLAGS) -DAGGREGATE_STDDEV aggregate.c -o aggregate_stddev.o
+	$(CC) -c $(CFLAGS) -std=c99 -DAGGREGATE_STDDEV aggregate.c -o aggregate_stddev.o
