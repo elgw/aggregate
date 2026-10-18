@@ -9,7 +9,7 @@ blog](https://orlp.net/blog/two-stack-sliding-window-aggregation/) and
 described in [^1] and [^2].
 
 My Observation: In the two-stacks approach, it seems wasteful to
-mainintain two windows of $`w`$ elements, one should be enough!
+maintain two windows of $`w`$ elements, one should be enough!
 
 Tested here: A single list, implemented as a circular/ring buffer
 
@@ -46,8 +46,8 @@ bytes per second.
 ## Implementation / Memory Layout
 
 Unused space shown as `____`, barely lifted elements `LEL`, and
-elements that accumulate/combine results `MA#` where `#` says how many
-elements that it combines.
+elements that accumulate/combine results are shown as `MA#` where `#`
+says how many elements that it combines.
 
 With 5 elements in the data structures of capacity 7; with 3 elements
 at the "Front" and 2 in the "Back", the layout could look like this:
