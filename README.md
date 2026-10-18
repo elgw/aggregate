@@ -3,8 +3,10 @@
 Warning, throwaway code ahead!
 
 Context: Sliding-Window Aggregation, discussed in this [HN
-thread](https://news.ycombinator.com/item?id=50072485) and described
-in [^1] and [^2].
+thread](https://news.ycombinator.com/item?id=50072485)/[Orson
+R. L. Peters'
+blog](https://orlp.net/blog/two-stack-sliding-window-aggregation/) and
+described in [^1] and [^2].
 
 My Observation: In the two-stacks approach, it seems wasteful to
 mainintain two windows of $`w`$ elements, one should be enough!
