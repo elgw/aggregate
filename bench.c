@@ -33,6 +33,17 @@ timespec_diff(struct timespec* end, struct timespec * start)
 }
 
 
+void AGGT(ut)(int verbose, int w)
+{
+    if(verbose > 1){
+        printf("%d\n", w);
+    }
+    u64 n = 3*w + (u64) rand() % w;
+    double * V = malloc(n*sizeof(double));
+    // TODO !
+    free(V);
+}
+
 void AGGT(bench)(int verbose, int w, double timeout){
     struct timespec tstart, tnow;
     u64 t0, t1;

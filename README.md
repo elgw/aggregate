@@ -26,11 +26,12 @@ My code was timed on an AMD Ryzen 3700X, gcc version 13.3.0 using:
 $ make OPT=1 -B && ./test --benchmark --timeout 10
 ```
 
-The results are **NOT** comparable, at most indicative.
+The results are **NOT** comparable, at most indicative, due to the
+differences in IPC, compiler, test setups etc.
 
 The table will show how many ticks it takes (`__rdtscp`) in average
 for each cycle of **pop**, **push** and **eval** using a window size
-of $`2^{14}`$ elements.
+of $`2^{14}`$ elements, (at least that is how my code is measured).
 
 |           | Two-Stacks | This |
 |----------:|-----------:|-----:|
@@ -38,7 +39,7 @@ of $`2^{14}`$ elements.
 | ArithMean |        165 |   77 |
 |    StdDev |        200 |   93 |
 
-Throughput can be approximated by $`cpu_freq/latency*sizeof(u64)`$
+Throughput can be approximated by `cpufreq/latency*sizeof(u64)`
 bytes per second.
 
 
