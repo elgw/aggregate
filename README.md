@@ -58,10 +58,10 @@ Hacc = [MA2]
         Accumulator for the head elements marked below
                           >--------<
 RB = [___ ,MA3, MA2, MA1, LEL, LEL), ___]
-             |              |         |
-            (T)ail          |        (H)head
-                           (U)pdate Horizon /
-                           First "normal" element
+            |              |         |
+           (T)ail          |        (H)head, where to push next
+                          (U)pdate Horizon /
+                          First "normal" element
 
 The output combines Tail with Hacc into a MA5 which is then lowered.
 ```
