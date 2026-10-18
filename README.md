@@ -63,7 +63,7 @@ A call to `accumulate_eval` will return use `Hacc` and the Tail (if exist).
 
 To see for real data, try `./test --steps`
 
-<details><summary><pre>./test --steps --method 2</pre></summary>
+<details><summary>./test --steps --method 2</summary>
 
 Small excerpt ...
 
