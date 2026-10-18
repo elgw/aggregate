@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -5,319 +6,32 @@
 #include <x86intrin.h>
 #include <math.h>
 #include <getopt.h>
+#include <sched.h>
+#include <unistd.h>
 
 #include "aggregate.h"
+#include "bench.h"
 
 typedef uint64_t u64;
 typedef uint32_t u32;
 
-static double min_double(double a, double b){
-    if(a < b){
-        return a;
+// pin the program to a specific cpu. 0-based id
+static void pin_to_cpu(size_t cpu_id){
+    cpu_set_t * set = CPU_ALLOC(cpu_id+1);
+    assert(set != NULL);
+    CPU_ZERO_S(CPU_ALLOC_SIZE(cpu_id+1), set);
+    CPU_SET(cpu_id, set);
+    if (sched_setaffinity(getpid(), sizeof(&set), set) == -1){
+        fprintf(stderr, "sched_setaffinity failed\n");
+        exit(EXIT_FAILURE);
     }
-    return b;
+    CPU_FREE(set);
+    if( sched_yield() ){ // switch if not on that cpu
+        fprintf(stderr, "sched_yield failed\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
-void test_min(int verbose, int w){
-    if(verbose > 0){
-        printf("AGG_MIN_MIN: Testing with window size = %d\n", w);
-    }
-    agg_min_ * AGG = agg_min_new(w);
-
-    u64 t0, t1;
-    u32 cpuid;
-
-    if(verbose > 1){
-        printf("Add and remove one element\n");
-    }
-    for(int kk = 0; kk < 3*w; kk++){
-        double v = kk+1.1;
-        if(verbose > 1){
-            printf("Adding %f\n", v);
-        }
-        agg_min_push(AGG, v);
-        if(verbose > 2){
-            agg_min_print(AGG);
-        }
-        double r;
-        agg_min_eval(AGG, &r);
-        assert(v == r);
-        if(verbose > 1){
-            printf("Popping\n");
-        }
-        if(agg_min_pop(AGG)){
-            assert(0);
-        }
-        if(verbose > 2){
-            agg_min_print(AGG);
-        }
-    }
-
-    agg_min_reset(AGG);
-    if(verbose > 1){
-        printf("Fill the buffer\n");
-    }
-    for(int kk = 0; kk < w; kk++){
-        agg_min_push(AGG, 10.0 - kk);
-        if(verbose > 2){
-            agg_min_print(AGG);
-        }
-    }
-
-    u64 n_operations = 0;
-    u64 t_ppe = 0;
-
-    if(verbose > 1){
-        printf("EVAL_POP_PUSH cycle\n");
-    }
-    int n_test = 10000000/w;
-    double r;
-    for(int kk = 0; kk < n_test; kk++){
-        double minvalue = 1e99;
-        for(int vv = 0; vv < w; vv++){
-            n_operations++;
-            double v = 10.0 * (double) rand() / (double) RAND_MAX;
-            minvalue = min_double(minvalue, v);
-
-            t0 = __rdtscp(&cpuid);
-            agg_min_pop(AGG);
-            agg_min_push(AGG, v);
-            agg_min_eval(AGG, &r);
-            t1 = __rdtscp(&cpuid);
-            t_ppe += t1 - t0;
-            printf("\r%.1f", r);
-        }
-        agg_min_eval(AGG, &r);
-        assert( r == minvalue );
-    }
-    printf("\r   Results after %lu operations\n", n_operations);
-    printf("   Avg. PPE Time: %.1f\n", (double) t_ppe / (double) n_operations);
-
-    agg_min_free(AGG);
-}
-
-void test_mean(int verbose, int w){
-    if(verbose > 0){
-        printf("AGG_MEAN_MEAN: Testing with window size = %d\n", w);
-    }
-    agg_mean_ * AGG = agg_mean_new(w);
-
-    u64 t0, t1;
-    u32 cpuid;
-
-    if(verbose > 1){
-        printf("Add and remove one element\n");
-    }
-    for(int kk = 0; kk < 3*w; kk++){
-        double v = kk+1.1;
-        if(verbose > 1){
-            printf("Adding %f\n", v);
-        }
-        agg_mean_push(AGG, v);
-        if(verbose > 2){
-            agg_mean_print(AGG);
-        }
-        double r;
-        agg_mean_eval(AGG, &r);
-        assert(v == r);
-        if(verbose > 1){
-            printf("Popping\n");
-        }
-        if(agg_mean_pop(AGG)){
-            assert(0);
-        }
-        if(verbose > 2){
-            agg_mean_print(AGG);
-        }
-    }
-
-    agg_mean_reset(AGG);
-    if(verbose > 1){
-        printf("Fill the buffer\n");
-    }
-    for(int kk = 0; kk < w; kk++){
-        agg_mean_push(AGG, 10.0 - kk);
-        if(verbose > 2){
-            agg_mean_print(AGG);
-        }
-    }
-
-    u64 n_operations = 0;
-    u64 t_ppe = 0;
-
-    if(verbose > 1){
-        printf("EVAL_POP_PUSH cycle\n");
-    }
-    int n_test = 10000000 / w;
-    double r;
-
-    for(int kk = 0; kk < n_test; kk++){
-        double sum = 0;
-        double rsum = 0;
-        for(int vv = 0; vv < w; vv++){
-            n_operations++;
-            double v = 10.0 * (double) rand() / (double) RAND_MAX;
-            sum += v;
-            t0 = __rdtscp(&cpuid);
-            agg_mean_pop(AGG);
-            agg_mean_push(AGG, v);
-            agg_mean_eval(AGG, &r);
-            t1 = __rdtscp(&cpuid);
-            t_ppe += t1 - t0;
-            rsum += r;
-        }
-        printf("\r%f", rsum);
-
-
-        if( fabs(r - sum / (double) w) > 1e-5 ){
-            printf("ERROR:\n");
-            printf("Expected %f\n", sum / (double) w);
-            printf("Got:     %f\n", r);
-            agg_mean_print(AGG);
-            assert(0);
-            exit(EXIT_FAILURE);
-        }
-    }
-    printf("   Results after %lu operations\n", n_operations);
-    printf("   Avg. PPE Time: %.1f\n", (double) t_ppe / (double) n_operations);
-
-    agg_mean_free(AGG);
-}
-
-void test_std(int verbose, int w){
-    if(verbose > 0){
-        printf("AGG_STD_STDDEV: Testing with window size = %d\n", w);
-    }
-    agg_std_ * AGG = agg_std_new(w);
-
-    u64 t0, t1;
-    u32 cpuid;
-
-    if(verbose > 1){
-        printf("Add and remove one element\n");
-    }
-    for(int kk = 0; kk < 3*w; kk++){
-        double v = kk+1.1;
-        if(verbose > 1){
-            printf("Adding %f\n", v);
-        }
-        agg_std_push(AGG, v);
-        if(verbose > 2){
-            agg_std_print(AGG);
-        }
-        double r;
-        agg_std_eval(AGG, &r);
-        assert(v == r);
-        if(verbose > 1){
-            printf("Popping\n");
-        }
-        if(agg_std_pop(AGG)){
-            assert(0);
-        }
-        if(verbose > 2){
-            agg_std_print(AGG);
-        }
-    }
-
-    agg_std_reset(AGG);
-    if(verbose > 1){
-        printf("Fill the buffer\n");
-    }
-    for(int kk = 0; kk < w; kk++){
-        agg_std_push(AGG, 10.0 - kk);
-        if(verbose > 2){
-            agg_std_print(AGG);
-        }
-    }
-
-    u64 n_operations = 0;
-    u64 t_ppe = 0;
-
-    if(verbose > 1){
-        printf("EVAL_POP_PUSH cycle\n");
-    }
-
-    int n_test = 10000000 / w;
-    double r;
-
-    for(int kk = 0; kk < n_test; kk++){
-        double sum = 0;
-        double sum2 = 0;
-
-        double rsum = 0;
-        for(int vv = 0; vv < w; vv++){
-            n_operations++;
-            double v = 10.0 * (double) rand() / (double) RAND_MAX;
-            sum += v;
-            sum2 += v*v;
-            t0 = __rdtscp(&cpuid);
-            agg_std_pop(AGG);
-            agg_std_push(AGG, v);
-            agg_std_eval(AGG, &r);
-            t1 = __rdtscp(&cpuid);
-            t_ppe += t1 - t0;
-            rsum += r;
-        }
-        printf("\r%.1f            ", rsum);
-        double ref = sqrt((1.0 / (double) w) *(sum2 - sum*sum));
-
-        if( fabs(r - ref) > 1e-5 ){
-            printf("\rERROR:               \n");
-            printf("Expected %f\n", sum / (double) w);
-            printf("Got:     %f\n", r);
-            //agg_std_print(AGG);
-            //assert(0);
-            //exit(EXIT_FAILURE);
-        }
-    }
-    printf("\r   Results after %lu operations\n", n_operations);
-    printf("   Avg. PPE Time: %.1f\n", (double) t_ppe / (double) n_operations);
-
-    agg_std_free(AGG);
-}
-
-
-void show_steps(int w){
-    printf("agg_mean_new(%d)\n", w);
-    agg_mean_ * A = agg_mean_new(w);
-    agg_mean_print(A);
-
-    for(int kk = 0; kk < 5; kk++){
-        double v = (double) rand() / (double) RAND_MAX;
-        printf("agg_mean_push(A, %f)\n", v);
-        agg_mean_push(A, v);
-        agg_mean_print(A);
-    }
-
-    for(int kk = 0; kk < 5; kk++){
-        double v;
-        if(agg_mean_eval(A, &v)){
-            assert(0);
-        }
-        printf("agg_mean_eval(A) -> %f\n", v);
-        printf("agg_mean_pop(A)\n");
-        agg_mean_pop(A);
-        agg_mean_print(A);
-        v = (double) rand() / (double) RAND_MAX;
-        printf("agg_mean_push(A, %f)\n", v);
-        agg_mean_push(A, v);
-        agg_mean_print(A);
-    }
-    printf("Emptying the aggrate\n");
-    for(int kk = 0; kk < 5; kk ++){
-        double v;
-        if(agg_mean_eval(A, &v)){
-            assert(0);
-        }
-        printf("agg_mean_eval(A) -> %f\n", v);
-        printf("agg_mean_pop(A)\n");
-        agg_mean_pop(A);
-        agg_mean_print(A);
-    }
-    agg_mean_free(A);
-    A = NULL;
-    return;
-}
 
 typedef struct {
     int verbose;
@@ -325,13 +39,21 @@ typedef struct {
     int benchmark; // yes/no
     int validate; // yes/no
     int steps; // yes/no
+    double timeout;
 } config;
 
 static void usage(void){
     printf("--verbose v\n");
     printf("--method n\n");
-    printf("--benchmark\n");
+    printf("--benchmark\n\t"
+           "Benchmark all methods\n");
+    printf("--timeout s\n\t"
+           "Timeout value in seconds for the benchmarks\n");
+    printf("--steps\n\t"
+           "Show step by step internals\n");
     printf("--validate\n");
+    printf("--help\n\tShow this message\n");
+    return;
 }
 
 static config *
@@ -344,13 +66,15 @@ config_new(int argc, char ** argv)
         { "steps",      no_argument, NULL, 's' },
         { "validate",   no_argument, NULL, 'V'},
         { "help",       no_argument, NULL, 'h'},
+        { "timeout",    required_argument, NULL, 't'},
         { NULL,           0,               NULL,  0  }
     };
     config * conf = calloc(1, sizeof(config));
     conf->verbose = 1;
+    conf->timeout = 1.0; // s
     int ch;
     while((ch = getopt_long(argc, argv,
-                            "vm:bVs",
+                            "vm:bVst:",
                             longopts, NULL)) != -1) {
         switch(ch) {
         case 'v':
@@ -371,6 +95,8 @@ config_new(int argc, char ** argv)
         case 's':
             conf->steps = 1;
             break;
+        case 't':
+            conf->timeout = atof(optarg);
         default:
             break;
         }
@@ -389,28 +115,42 @@ int main(int argc, char ** argv){
     }
 
     if(conf->benchmark == 1){
+        pin_to_cpu(0);
+        u64 w = 16384; // 2^14
         if( (conf->method == 0) | (conf->method == 1) ){
-            test_min(conf->verbose, 16384); // 2^14
+            agg_min_bench(conf->verbose, w, conf->timeout);
         }
         if( (conf->method == 0) | (conf->method == 2) ){
-            test_mean(conf->verbose, 16384);
+            agg_mean_bench(conf->verbose, w, conf->timeout);
         }
         if( (conf->method == 0) | (conf->method == 3) ){
-            test_std(conf->verbose, 16384);
+            agg_std_bench(conf->verbose, w, conf->timeout);
         }
         free(conf);
         return EXIT_SUCCESS;
     }
 
     if(conf->steps){
-        show_steps(5);
+        u64 w = 5;
+        if( (conf->method == 0) | (conf->method == 1) ){
+            printf("Showing steps for min\n\n");
+            agg_min_steps(w);
+        }
+        if( (conf->method == 0) | (conf->method == 2) ){
+            printf("Showing steps for mean\n\n");
+            agg_mean_steps(w);
+        }
+        if( (conf->method == 0) | (conf->method == 3) ){
+            printf("Showing steps for std\n\n");
+            agg_std_steps(w);
+        }
         free(conf);
         return EXIT_SUCCESS;
     }
 
     if(conf->validate){
         for(int w = 3; w < 121; w++){
-            test_mean(conf->verbose, w);
+            //
         }
         free(conf);
         return EXIT_SUCCESS;

@@ -15,7 +15,11 @@ endif
 endif
 
 # todo -- merge test_std.c test_min.c into test.c
-test: aggregate_mean.o aggregate_min.o aggregate_std.o test.c
+FILES = test.c \
+aggregate_mean.o aggregate_min.o aggregate_std.o \
+bench_min.o bench_mean.o bench_std.o
+
+test: $(FILES)
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o test
 
 aggregate_min.o:
@@ -26,3 +30,12 @@ aggregate_mean.o:
 
 aggregate_std.o:
 	$(CC) -c $(CFLAGS) -std=c99 -DAGGREGATE_STD aggregate.c -o aggregate_std.o
+
+bench_min.o:
+	$(CC) -c $(CFLAGS) -DAGGREGATE_MIN bench.c -o bench_min.o
+
+bench_mean.o:
+	$(CC) -c $(CFLAGS) -DAGGREGATE_MEAN bench.c -o bench_mean.o
+
+bench_std.o:
+	$(CC) -c $(CFLAGS) -DAGGREGATE_STD bench.c -o bench_std.o

@@ -1,12 +1,11 @@
 #  Sliding-Window Aggregation with Ring Buffer
 
-Context: Sliding-Window Aggregation, described in [^1] and [^2] see
-also [^3]. The background will not be repeated here.
+Context: Sliding-Window Aggregation, discussed in this [HN
+thread](https://news.ycombinator.com/item?id=50072485) and described
+in [^1] and [^2].
 
-Observation: For a window of $`w`$ elements, the two-stack approach
-maintains two lists of size $`w`$, one for elements and one for
-aggregates. That seems wasteful since these two lists contain at most
-$`w`$ elements in total.
+My Observation: In the two-stacks approach, it seems wasteful to
+mainintain two windows of $`w`$ elements, one should be enough!
 
 Tested here: A single list, implemented as a circular/ring buffer
 
@@ -34,27 +33,19 @@ at 2.7 GHz,  g++ version 4.8.3.
 Timings for this code: AMD Ryzen 3700X, gcc version 13.3.0.
 
 ``` shell
-make -B OPT=1 test_min -B  && ./test_min
-make -B OPT=1 test_mean -B && ./test_mean
-make -B OPT=1 test_min -B  && ./test_stddev
+$ make OPT=1 -B && ./test --benchmark --timeout 10
 ```
 
 Latency, ticks:
 
 |           | Two-Stacks | This |
 |----------:|-----------:|-----:|
-|   Max/Min |        125 |   77 |
-| ArithMean |        165 |   79 |
-|    StdDev |        200 |   95 |
+|   Max/Min |        125 |   67 |
+| ArithMean |        165 |   77 |
+|    StdDev |        200 |   93 |
 
-Throughput can be approximated by $`4*10^9/latency*8`$ bytes per second, which
-gives these results, unit MB/s.
-
-|           | Two-Stacks | This |
-|----------:|-----------:|-----:|
-|   Max/Min |        256 |  416 |
-| ArithMean |        194 |  405 |
-|    StdDev |        160 |  337 |
+Throughput can be approximated by $`cpu_freq/latency*sizeof(u64)`$
+bytes per second.
 
 ## Implementation / Memory Layout
 
@@ -76,7 +67,79 @@ RB  = [___ ,MAC, MAC, MAC, LEL, LEL), ___]
                            First "normal" element
 ```
 
-A call to `accumulate_eval` will return
+A call to `accumulate_eval` will return use `Hacc` and the Tail (if exist).
+
+To see for real data, try `./test --steps`
+
+<details><summary>`./test --steps --method 2`</summary>
+
+Small excerpt ...
+
+``` shell
+Showing steps for std
+
+new, w=5
+---
+| Hacc: [.n=0, .S=0.000000 .Q=0.000000](=mono0)
+---
+Filling ...
+push(A, 0.840188)
+---
+| 0 EL =[.n=1, .S=0.840188 .Q=0.705915]TU
+| Hacc: [.n=1, .S=0.840188 .Q=0.705915]
+---
+push(A, 0.394383)
+---
+| 0 EL =[.n=1, .S=0.840188 .Q=0.705915]TU
+| 1 EL =[.n=1, .S=0.394383 .Q=0.155538]
+| Hacc: [.n=2, .S=1.234571 .Q=0.861453]
+---
+push(A, 0.783099)
+---
+| 0 EL =[.n=1, .S=0.840188 .Q=0.705915]TU
+| 1 EL =[.n=1, .S=0.394383 .Q=0.155538]
+| 2 EL =[.n=1, .S=0.783099 .Q=0.613244]
+| Hacc: [.n=3, .S=2.017670 .Q=1.474698]
+---
+push(A, 0.798440)
+---
+| 0 EL =[.n=1, .S=0.840188 .Q=0.705915]TU
+| 1 EL =[.n=1, .S=0.394383 .Q=0.155538]
+| 2 EL =[.n=1, .S=0.783099 .Q=0.613244]
+| 3 EL =[.n=1, .S=0.798440 .Q=0.637506]
+| Hacc: [.n=4, .S=2.816110 .Q=2.112204]
+---
+push(A, 0.911647)
+---
+| 0 EL =[.n=1, .S=0.840188 .Q=0.705915]TU
+| 1 EL =[.n=1, .S=0.394383 .Q=0.155538]
+| 2 EL =[.n=1, .S=0.783099 .Q=0.613244]
+| 3 EL =[.n=1, .S=0.798440 .Q=0.637506]
+| 4 EL =[.n=1, .S=0.911647 .Q=0.831101]
+| Hacc: [.n=5, .S=3.727757 .Q=2.943305]
+---
+POP-PUSH-EVAL ...
+pop(A)
+---
+| 1 AGG=[.n=4, .S=2.887570 .Q=2.237390]T
+| 2 AGG=[.n=3, .S=2.493187 .Q=2.081852]
+| 3 AGG=[.n=2, .S=1.710087 .Q=1.468607]
+| 4 AGG=[.n=1, .S=0.911647 .Q=0.831101]
+| Hacc: [.n=0, .S=0.000000 .Q=0.000000]
+---
+push(A, 0.197551)
+---
+| 1 AGG=[.n=4, .S=2.887570 .Q=2.237390]T
+| 2 AGG=[.n=3, .S=2.493187 .Q=2.081852]
+| 3 AGG=[.n=2, .S=1.710087 .Q=1.468607]
+| 4 AGG=[.n=1, .S=0.911647 .Q=0.831101]
+| 5 EL =[.n=1, .S=0.197551 .Q=0.039027]U
+| Hacc: [.n=1, .S=0.197551 .Q=0.039027]
+---
+eval(A) -> 0.273065
+```
+
+</details>
 
 ## To do ...
 
