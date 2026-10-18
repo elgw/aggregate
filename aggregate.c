@@ -106,8 +106,8 @@ static void mitem_print(mitem a){
 
 struct AGGT(struct) {
     mitem Hacc; // aggregate/accumulator for the head elements
-    mitem* RB; // Ring buffer with all elemnts
-    uint64_t nRB; // number of element in RB
+    mitem* RB; // Ring buffer with all elements
+    uint64_t nRB; // number of element in RB (1+w)
     uint64_t H; // head = Writepos
     uint64_t U; // update horizon, or first location of the lifted elements
     uint64_t T; // tail = Readpos

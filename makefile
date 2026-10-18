@@ -22,6 +22,9 @@ bench_min.o bench_mean.o bench_std.o
 test: $(FILES)
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o test
 
+gagg: gagg.c gagg_test.c
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o gagg
+
 aggregate_min.o:
 	$(CC) -c $(CFLAGS) -std=c99 -DAGGREGATE_MIN aggregate.c -o aggregate_min.o
 

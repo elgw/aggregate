@@ -33,11 +33,11 @@ The table will show how many ticks it takes (`__rdtscp`) in average
 for each cycle of **pop**, **push** and **eval** using a window size
 of $`2^{14}`$ elements, (at least that is how my code is measured).
 
-|           | Two-Stacks | This |
-|----------:|-----------:|-----:|
-|   Max/Min |        125 |   67 |
-| ArithMean |        165 |   77 |
-|    StdDev |        200 |   93 |
+|           | Two-Stacks | agg | gagg |
+|----------:|-----------:|----:|-----:|
+|   Max/Min |        125 |  67 |   95 |
+| ArithMean |        165 |  77 |      |
+|    StdDev |        200 |  93 |      |
 
 Throughput can be approximated by `cpufreq/latency*sizeof(u64)`
 bytes per second.
