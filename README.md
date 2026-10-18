@@ -1,5 +1,7 @@
 #  Sliding-Window Aggregation with Ring Buffer
 
+Warning, throwaway code ahead!
+
 Context: Sliding-Window Aggregation, discussed in this [HN
 thread](https://news.ycombinator.com/item?id=50072485) and described
 in [^1] and [^2].
@@ -11,24 +13,22 @@ Tested here: A single list, implemented as a circular/ring buffer
 
 ## Results
 
-Quick tests shows reasonable performance. At the moment there are
-timings for my code run on my machine, vs that of [^2], evaluated on
-their system.
-
-The table will show how many ticks it takes (`__rdtscp`) in average
-for each cycle of **pop**, **push** and **eval** using a window size
-of $`2^{14}`$ elements.
+Quick tests shows reasonable performance.
 
 Two-Stacks result taken from Table 2 in [^2]. CPU: Intel Xeon E5-2680
 at 2.7 GHz,  g++ version 4.8.3.
 
-Timings for this code: AMD Ryzen 3700X, gcc version 13.3.0.
+My code was timed on an AMD Ryzen 3700X, gcc version 13.3.0 using:
 
 ``` shell
 $ make OPT=1 -B && ./test --benchmark --timeout 10
 ```
 
-Latency, ticks:
+The results are **NOT** comparable, at most indicative.
+
+The table will show how many ticks it takes (`__rdtscp`) in average
+for each cycle of **pop**, **push** and **eval** using a window size
+of $`2^{14}`$ elements.
 
 |           | Two-Stacks | This |
 |----------:|-----------:|-----:|
@@ -39,29 +39,31 @@ Latency, ticks:
 Throughput can be approximated by $`cpu_freq/latency*sizeof(u64)`$
 bytes per second.
 
+
 ## Implementation / Memory Layout
 
-Unused space shown as `____`, an accumulator is denote `MAC` and an
-element, barely lifted is denoted `LEL`.
+Unused space shown as `____`, barely lifted elements `LEL`, and
+elements that accumulate/combine results `MA#` where `#` says how many
+elements that it combines.
 
-With 5 elements in the data structures of capacity 7; 3 at the "Front"
-and 2 in the "Back", the layout could look like this:
+With 5 elements in the data structures of capacity 7; with 3 elements
+at the "Front" and 2 in the "Back", the layout could look like this:
 
 ```
-Hacc = [MAC]
+Hacc = [MA2]
          |
         Accumulator for the head elements marked below
                           >--------<
-RB  = [___ ,MAC, MAC, MAC, LEL, LEL), ___]
+RB = [___ ,MA3, MA2, MA1, LEL, LEL), ___]
              |              |         |
             (T)ail          |        (H)head
                            (U)pdate Horizon /
                            First "normal" element
+
+The output combines Tail with Hacc into a MA5 which is then lowered.
 ```
 
-A call to `accumulate_eval` will return use `Hacc` and the Tail (if exist).
-
-To see for real data, try `./test --steps`
+To see what is going on using random data, try `./test --steps`
 
 <details><summary>./test --steps --method 2</summary>
 
@@ -133,23 +135,14 @@ eval(A) -> 0.273065
 
 </details>
 
-## To do ...
-
-- [ ] Check that it is correct.
-- [ ] Make it useful; a little, or some more macros could help (so
-      much nicer to do it a language with templates or metaprogramming
-      ... ).
-- [ ] Find a use for it :)
-
-## References
+## References/Links
 
 [^1]: Kanat Tangwongsan, Martin Hirzel, Scott Schneider, and Kun-Lung Wu. 2015. General incremental sliding-window aggregation. Proc. VLDB Endow. 8, 7 (February 2015), 702–713. https://doi.org/10.14778/2752939.2752940
 [^2]: Kanat Tangwongsan, Martin Hirzel, and Scott Schneider. 2017. Low-Latency Sliding-Window Aggregation in Worst-Case Constant Time. In Proceedings of the 11th ACM International Conference on Distributed and Event-based Systems (DEBS '17). Association for Computing Machinery, New York, NY, USA, 66–77. https://doi.org/10.1145/3093742.3093925
 [^3]: Orson R. L. Peters, Two-Stack Sliding-Window Aggregation,
     [https://orlp.net/blog/two-stack-sliding-window-aggregation/]
 
-- [https://gmplib.org/]
-
 - For large windows consider [Kahan
   summation](https://en.wikipedia.org/wiki/Kahan_summation_algorithm)
-  and similar techniques depending on statistics of interest.
+  and similar techniques depending on statistics of interest. See also
+  [The GNU Multiple Precision Arithmetic Library](https://gmplib.org/).
