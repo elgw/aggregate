@@ -9,14 +9,6 @@ mainintain two windows of $`w`$ elements, one should be enough!
 
 Tested here: A single list, implemented as a circular/ring buffer
 
-## (side) notes
-- If not obvious, this is throwaway code. Not used outside of this
-  repo.
-
-- For large windows consider [Kahan
-  summation](https://en.wikipedia.org/wiki/Kahan_summation_algorithm)
-  and similar methods.
-
 ## Results
 
 Quick tests shows reasonable performance. At the moment there are
@@ -71,7 +63,7 @@ A call to `accumulate_eval` will return use `Hacc` and the Tail (if exist).
 
 To see for real data, try `./test --steps`
 
-<details><summary>`./test --steps --method 2`</summary>
+<details><summary><pre>./test --steps --method 2</pre></summary>
 
 Small excerpt ...
 
@@ -157,3 +149,7 @@ eval(A) -> 0.273065
     [https://orlp.net/blog/two-stack-sliding-window-aggregation/]
 
 - [https://gmplib.org/]
+
+- For large windows consider [Kahan
+  summation](https://en.wikipedia.org/wiki/Kahan_summation_algorithm)
+  and similar techniques depending on statistics of interest.
