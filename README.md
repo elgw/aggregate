@@ -138,6 +138,12 @@ eval(A) -> 0.273065
 
 </details>
 
+## Validation
+
+Use `make -B && ./test --validate` to run some tests. They are not
+exhaustive! Assume that nothing works until you've written your own
+tests.
+
 ## References/Links
 
 [^1]: Kanat Tangwongsan, Martin Hirzel, Scott Schneider, and Kun-Lung Wu. 2015. General incremental sliding-window aggregation. Proc. VLDB Endow. 8, 7 (February 2015), 702–713. https://doi.org/10.14778/2752939.2752940

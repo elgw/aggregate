@@ -6,22 +6,48 @@
 #include <stdint.h>
 #include <x86intrin.h>
 #include <time.h>
+#include <math.h>
 
 #include "aggregate.h"
 
 typedef uint64_t u64;
+typedef int64_t i64;
 typedef uint32_t u32;
 
 #ifdef AGGREGATE_MIN
 #define AGGT(x) agg_min_##x
+static double ref_stat(double * V, i64 a, i64 b){
+    double v = V[a];
+    for(i64 kk = a; kk <=b ; kk++){
+        v > V[kk] ? v = V[kk] : 0;
+    }
+    return v;
+}
 #endif
 
 #ifdef AGGREGATE_MEAN
 #define AGGT(x) agg_mean_##x
+static double ref_stat(double * V, i64 a, i64 b){
+    double S = 0;
+    for(i64 kk = a; kk <= b ; kk++){
+        S += V[kk];
+    }
+    return S / (double) (b-a+1);
+}
 #endif
 
 #ifdef AGGREGATE_STD
 #define AGGT(x) agg_std_##x
+static double ref_stat(double * V, i64 a, i64 b){
+    double S = 0;
+    double S2 = 0;
+    for(i64 kk = a; kk <= b ; kk++){
+        S += V[kk];
+        S2 += V[kk]*V[kk];
+    }
+    double n = b-a+1;
+    return sqrt(S2/n - S*S/n);
+}
 #endif
 
 static double
@@ -38,9 +64,42 @@ void AGGT(ut)(int verbose, int w)
     if(verbose > 1){
         printf("%d\n", w);
     }
-    u64 n = 3*w + (u64) rand() % w;
+    i64 n = 3*w + (u64) rand() % w;
     double * V = malloc(n*sizeof(double));
-    // TODO !
+    for(i64 kk = 0; kk < n; kk++){
+        V[kk] = (double) rand() / (double) RAND_MAX;
+    }
+    AGGT() * A = AGGT(new)(w);
+
+    assert(AGGT(pop)(A)); // should return -1 when empty
+
+    i64 ne0 = 0;
+    for(i64 kk = 0; kk < n+w-1; kk++){
+        double v;
+        if(kk >= (i64) w){
+            AGGT(pop)(A);
+            ne0--;
+        }
+        if(kk < n){
+            AGGT(push)(A, V[kk]);
+            ne0++;
+        }
+        AGGT(eval)(A, &v);
+        i64 a = kk - w+1;
+        a < 0 ? a = 0 : 0;
+        i64 b = kk;
+        b >= n ? b = n-1 : 0;
+        i64 ne = b - a + 1;
+        assert(ne == ne0);
+        double r = ref_stat(V, a, b);
+        if(fabs(v - r) > 1e-5){
+            printf("Expected %f, got %f (delta: %f)\n", r, v, r-v);
+            printf("a = %ld, b = %ld, w = %d, n = %ld\n",
+                   a, b, w, n);
+            exit(EXIT_FAILURE);
+        }
+    }
+    AGGT(free)(A);
     free(V);
 }
 

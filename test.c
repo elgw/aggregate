@@ -148,9 +148,29 @@ int main(int argc, char ** argv){
         return EXIT_SUCCESS;
     }
 
+    // Linear scan comparison vs naiive method on an array of 3*w +
+    // (u64) rand() % w elements
+
     if(conf->validate){
-        for(int w = 3; w < 121; w++){
-            //
+        for(u64 w = 1; w < 117; w++){
+            if( (conf->method == 0) | (conf->method == 1) ){
+                if(conf->verbose > 0){
+                    printf("Validating min, w=%ld\n", w);
+                }
+                agg_min_ut(conf->verbose, w);
+            }
+            if( (conf->method == 0) | (conf->method == 2) ){
+                if(conf->verbose > 0){
+                    printf("Validating mean, w=%ld\n", w);
+                }
+                agg_mean_ut(conf->verbose, w);
+            }
+            if( (conf->method == 0) | (conf->method == 3) ){
+                if(conf->verbose > 0){
+                    printf("Validating std, w=%ld\n", w);
+                }
+                agg_std_ut(conf->verbose, w);
+            }
         }
         free(conf);
         return EXIT_SUCCESS;
