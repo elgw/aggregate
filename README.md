@@ -43,6 +43,14 @@ Tested here: The two lists are replaced by a single circular/ring buffer.
 
 In the test code, floats and ints are 64-bit.
 
+In `playground.py` there are three implementation:
+- `TwoStackAgg` -- which is copied from [Orson R. L. Peters'
+blog](https://orlp.net/blog/two-stack-sliding-window-aggregation/).
+- `TwoStackAgg2` -- which avoid using the unit element, and saves a
+  few call to the combine function.
+- `CircularAgg` -- which is more or less what you will find in the
+  C-code. Not that efficient but might be simpler to play with.
+
 ## Results
 
 Quick tests shows reasonable performance.

@@ -44,12 +44,15 @@ class TwoStackAgg:
             if self.cum_aggs else self.values_agg
         )
 
-# - "empty" not needed, i.e. the unit in the monoid
-#   unit/"lift" called directly
-#   at the cost of a few more comparisons
-# - 1 less combine operation in pop
 
 class TwoStackAgg2:
+    """
+    - semigroup aggregate, i.e. identity/"empty" not needed. Seems to be possible
+    at the cost of a few more conditionals. Also changes the eval of an empty
+    structure
+    - 1 less combine operation in pop during the rebuild.
+    """
+
     def __init__(self):
         self.values = []
         self.agg = None
@@ -65,7 +68,7 @@ class TwoStackAgg2:
     def pop(self):
         if not self.cum_aggs:
             cum_agg = self.values.pop()
-            self.cum_aggs.append(cum_agg)
+            self.cum_aggs.append(cum_agg) # Note: not combined's with the identity
             while self.values:
                 cum_agg = combine(self.values.pop(), cum_agg)
                 self.cum_aggs.append(cum_agg)
@@ -81,15 +84,25 @@ class TwoStackAgg2:
             return finalize(self.agg)
         return finalize(combine(self.cum_aggs[-1], self.agg))
 
-# A rolling buffer
-class RollingAgg:
+
+class CircAgg:
+    """
+    Using a circular buffer to store the lifted elements. Only (w+1) elements needed,
+    however some extra book keeping with cap, H, T, and U.
+
+    Not so efficient in Python given that lists element contain pointers to objects ...
+
+    Would be more elegant if we used 1-element, then agg would never have to be None
+
+    Constructed with (windows size)
+    """
     def __init__(self, w):
         self.values = [0]*(w+1) # Not a true array
-        self.cap = w+1
-        self.agg = None
-        self.H = 0
-        self.T = 0
-        self.U = 0
+        self.cap = w+1 # capacity
+        self.agg = None # Aggregator for elements
+        self.H = 0 # Where to push the next element
+        self.T = 0 # Oldest element
+        self.U = 0 # Pos of first item in agg
 
     def next(self, i):
         return i + 1 if i + 1 < self.cap else 0
@@ -98,6 +111,7 @@ class RollingAgg:
         return i -1 if i > 0 else self.cap -1
 
     def push(self, x):
+        assert(self.next(self.H) != self.T)
         self.values[self.H] = unit(x)
         if self.agg is None:
             self.agg = self.values[self.H]
@@ -106,8 +120,8 @@ class RollingAgg:
         self.H = self.next(self.H)
 
     def pop(self):
-        if(self.H == self.T):
-            assert(0) # failure -- pop on empty
+        assert(self.H != self.T) # Can't pop when empty
+
         rebuild = 0
         if self.T == self.U:
             rebuild = 1
@@ -157,48 +171,51 @@ class RollingAgg:
         print(f'eval = {self.eval()}')
 
 
-n_test = 1000000
+n_test = 100000
 w = 2**14
+
 T1 = TwoStackAgg() # 962 ns
-#T2 = TwoStackAgg2() # 912 ns
-T2 = RollingAgg(w) # 1262 ns
-t_T1 = 0
-t_T2 = 0
+T2 = TwoStackAgg2() # 912 ns
+T3 = CircAgg(w) # 1262 ns
+
+TT = [ T1, T2, T3 ]
+timings = [0]*len(TT)
 
 # FILL
 for i in range(0, w):
-    T1.push(i)
-    T2.push(i)
-    assert(T1.eval() == T2.eval())
+    for T in TT:
+        T.push(i)
+
+    v = TT[0].eval()
+    for T in TT[1:]:
+        assert(v == T.eval())
 
 # POP PUSH EVAL
 for i in range(0, n_test):
     v = random.randint(1, 100)
     e1 = 0
     e2 = 0
+    for i, T in enumerate(TT):
+        t0 = time.time_ns()
+        T.pop(),
+        T.push(v)
+        e1 = T1.eval()
+        t1 = time.time_ns()
+        timings[i] += t1-t0
 
-    t0 = time.time_ns()
-    T1.pop(),
-    T1.push(v)
-    e1 = T1.eval()
-    t1 = time.time_ns()
-    t_T1 += t1-t0
-
-    t0 = time.time_ns()
-    T2.pop()
-    T2.push(v)
-    e2 = T2.eval()
-    t1 = time.time_ns()
-    t_T2 += t1-t0
-    assert(e1 == e2)
+    v = TT[0].eval()
+    for T in TT[1:]:
+        assert(v == T.eval())
 
 # EMPTY
 # eval on empty skipped, different return values
 for i in range(0, w-1):
-    T1.pop()
-    T2.pop()
-    assert(T1.eval() == T2.eval())
+    for T in TT:
+        T.pop()
+    v = TT[0].eval()
+    for T in TT[1:]:
+        assert(v == T.eval())
 
 print('Average time [ns]')
-print(f'T1: {t_T1/n_test}')
-print(f'T2: {t_T2/n_test}')
+for k, T in enumerate(TT):
+    print(f'{T.__class__} : {timings[k]/n_test}')
