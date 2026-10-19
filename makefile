@@ -6,6 +6,7 @@ SAN?=0
 
 ifeq ($(OPT),1)
 CFLAGS += -O3 -DNDEBUG
+# CFLAGS += -mtune=native -march=native -fno-math-errno
 LDFLAGS+=-flto
 else
 CFLAGS += -g3 -Og -fno-inline

@@ -89,8 +89,7 @@ void AGGT(ut)(int verbose, int w)
         a < 0 ? a = 0 : 0;
         i64 b = kk;
         b >= n ? b = n-1 : 0;
-        i64 ne = b - a + 1;
-        assert(ne == ne0);
+        assert(b - a + 1 == ne0);
         double r = ref_stat(V, a, b);
         if(fabs(v - r) > 1e-5){
             printf("Expected %f, got %f (delta: %f)\n", r, v, r-v);

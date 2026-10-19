@@ -11,7 +11,37 @@ described in [^1] and [^2].
 My Observation: In the two-stacks approach, it seems wasteful to
 maintain two windows of $`w`$ elements, one should be enough!
 
-Tested here: A single list, implemented as a circular/ring buffer
+Tested here: The two lists are replaced by a single circular/ring buffer.
+
+- `aggregate.c/h` -- The best-performance option where everything
+  except `w` is known at compile time.
+- `gagg.c/h` -- a "general" implementation, where the used provide
+  pointers to all problem-specific functions. This is of course easier
+  to provide as a library (reminder to myself: switch to Zig already!).
+
+  Here is the relevant excerpt from `gagg.h`
+    ``` shell
+    struct gagg_struct;
+    typedef struct gagg_struct gagg;
+
+    typedef void (*gagg_lift_fcn)(void * dest, const void * source);
+    typedef void (*gagg_lower_fcn)(void * dest, const void * source);
+    typedef void (*gagg_combine_fcn)(void * dest, void * L, void * R);
+    typedef void (*gagg_print_fcn)(const void *);
+    gagg * gagg_new(uint64_t w,
+                    uint64_t mon_size, // size of lifted element, in bytes
+                    void * mon_unit, // the unit element in the monoid
+                    gagg_lift_fcn lift,
+                    gagg_lower_fcn lower,
+                    gagg_combine_fcn combine,
+                    gagg_print_fcn print);
+    void gagg_free(gagg *);
+    int gagg_push(gagg * A, void * val);
+    int gagg_eval(const gagg * A, void  *val);
+    int gagg_pop(gagg * A);
+    ```
+
+In the test code, floats and ints are 64-bit.
 
 ## Results
 
@@ -20,10 +50,11 @@ Quick tests shows reasonable performance.
 Two-Stacks result taken from Table 2 in [^2]. CPU: Intel Xeon E5-2680
 at 2.7 GHz,  g++ version 4.8.3.
 
-My code was timed on an AMD Ryzen 3700X, gcc version 13.3.0 using:
+My code was run on an AMD Ryzen 3700X, gcc version 13.3.0 using:
 
 ``` shell
 $ make OPT=1 -B && ./test --benchmark --timeout 10
+# Flags: -Wall -Wextra -Werror -O3 -DNDEBUG -flto
 ```
 
 The results are **NOT** comparable, at most indicative, due to the
@@ -33,14 +64,15 @@ The table will show how many ticks it takes (`__rdtscp`) in average
 for each cycle of **pop**, **push** and **eval** using a window size
 of $`2^{14}`$ elements, (at least that is how my code is measured).
 
-|           | Two-Stacks | agg | gagg |
-|----------:|-----------:|----:|-----:|
-|   Max/Min |        125 |  67 |   95 |
-| ArithMean |        165 |  77 |      |
-|    StdDev |        200 |  93 |      |
+|           | Two-Stacks | agg |      gagg |
+|----------:|-----------:|----:|----------:|
+|   Max/Min |        125 |  67 |        89 |
+| ArithMean |        165 |  77 | not timed |
+|    StdDev |        200 |  93 | not timed |
+|           |            |     |           |
 
-Throughput can be approximated by `cpufreq/latency*sizeof(u64)`
-bytes per second.
+Throughput can be approximated by `cpufreq/latency*sizeof(u64)` bytes
+per second, e.g. agg-min gives 4426/67*8 ~ 528 MB/s on my system.
 
 
 ## Implementation / Memory Layout
