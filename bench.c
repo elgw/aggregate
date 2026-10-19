@@ -73,16 +73,13 @@ void AGGT(ut)(int verbose, int w)
 
     assert(AGGT(pop)(A)); // should return -1 when empty
 
-    i64 ne0 = 0;
     for(i64 kk = 0; kk < n+w-1; kk++){
         double v;
         if(kk >= (i64) w){
             AGGT(pop)(A);
-            ne0--;
         }
         if(kk < n){
             AGGT(push)(A, V[kk]);
-            ne0++;
         }
         AGGT(eval)(A, &v);
         i64 a = kk - w+1;

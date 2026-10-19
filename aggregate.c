@@ -217,7 +217,6 @@ void AGGT(reset)(AGGT() * A){
 void AGGT(print)(const AGGT() * A){
     assert(A != NULL);
     u64 pos = A->T;
-    u64 n_elements = 0;
     int state = 0; // AGGT()s
     printf("---\n");
     while(pos != A->H){
@@ -243,7 +242,6 @@ void AGGT(print)(const AGGT() * A){
         }
         printf("\n");
         pos = next(A, pos);
-        n_elements++;
     }
     printf("| Hacc: ");
     mitem_print(A->Hacc);
