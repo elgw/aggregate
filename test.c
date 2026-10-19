@@ -6,7 +6,9 @@
 #include <x86intrin.h>
 #include <math.h>
 #include <getopt.h>
+#ifdef __linux__
 #include <sched.h>
+#endif
 #include <unistd.h>
 
 #include "aggregate.h"
@@ -15,6 +17,7 @@
 typedef uint64_t u64;
 typedef uint32_t u32;
 
+#ifdef __linux__
 // pin the program to a specific cpu. 0-based id
 static void pin_to_cpu(size_t cpu_id){
     cpu_set_t * set = CPU_ALLOC(cpu_id+1);
@@ -31,7 +34,10 @@ static void pin_to_cpu(size_t cpu_id){
         exit(EXIT_FAILURE);
     }
 }
-
+#else
+static void pin_to_cpu(__attribute__((unused)) size_t cpu_id){
+}
+#endif
 
 typedef struct {
     int verbose;

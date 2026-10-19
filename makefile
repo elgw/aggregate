@@ -1,4 +1,9 @@
-CFLAGS = -Wall -Wextra -Werror
+CFLAGS = -Wall -Wextra
+# -Werror does not work with zig cc
+
+# Example usage:
+# make -B OPT=1 CC='zig cc -target x86_64-linux-musl -mtune=native -march=native'
+
 LDFLAGS = -lm
 
 OPT?=0
