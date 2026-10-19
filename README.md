@@ -81,8 +81,9 @@ Unused space shown as `____`, barely lifted elements `LEL`, and
 elements that accumulate/combine results are shown as `MA#` where `#`
 says how many elements that it combines.
 
-With 5 elements in the data structures of capacity 7; with 3 elements
-to the Right and 2 to the left, the layout could look like this:
+With 5 elements in the data structures of capacity 1+w=7; with 3
+elements to the Right and 2 to the left, the layout could look like
+this:
 
 ```
 Hacc = [MA2]
