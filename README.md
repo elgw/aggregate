@@ -1,6 +1,6 @@
 #  Sliding-Window Aggregation with Ring Buffer
 
-Warning, throwaway code ahead!
+Warning, a weekend hack / throwaway code ahead!
 
 Context: Sliding-Window Aggregation, discussed in this [HN
 thread](https://news.ycombinator.com/item?id=50072485)/[Orson
@@ -82,7 +82,7 @@ elements that accumulate/combine results are shown as `MA#` where `#`
 says how many elements that it combines.
 
 With 5 elements in the data structures of capacity 7; with 3 elements
-at the "Front" and 2 in the "Back", the layout could look like this:
+to the Right and 2 to the left, the layout could look like this:
 
 ```
 Hacc = [MA2]
