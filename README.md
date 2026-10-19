@@ -50,7 +50,8 @@ Quick tests shows reasonable performance.
 Two-Stacks result taken from Table 2 in [^2]. CPU: Intel Xeon E5-2680
 at 2.7 GHz,  g++ version 4.8.3.
 
-My code was run on an AMD Ryzen 3700X, gcc version 13.3.0 using:
+My code was run on Ubuntu 24.04.1, AMD Ryzen 3700X, gcc version 13.3.0
+using:
 
 ``` shell
 $ make OPT=1 -B && ./test --benchmark --timeout 10
