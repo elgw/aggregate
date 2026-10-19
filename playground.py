@@ -84,7 +84,7 @@ class TwoStackAgg2:
 # A rolling buffer
 class RollingAgg:
     def __init__(self, w):
-        self.values = [0]*(w+1)
+        self.values = [0]*(w+1) # Not a true array
         self.cap = w+1
         self.agg = None
         self.H = 0
