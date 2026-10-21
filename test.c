@@ -45,20 +45,27 @@ typedef struct {
     int benchmark; // yes/no
     int validate; // yes/no
     int steps; // yes/no
+    u32 w; // window size for benchmark
     double timeout;
 } config;
 
 static void usage(void){
-    printf("--verbose v\n");
-    printf("--method n\n");
-    printf("--benchmark\n\t"
-           "Benchmark all methods\n");
-    printf("--timeout s\n\t"
-           "Timeout value in seconds for the benchmarks\n");
     printf("--steps\n\t"
-           "Show step by step internals\n");
-    printf("--validate\n");
-    printf("--help\n\tShow this message\n");
+           "Show calculations step by step\n");
+    printf("--validate\n\t"
+           "run some validations\n");
+    printf("--method m\n\t"
+           "Choose method #m, 1=min, 2=mean, 3=std. Default: All\n");
+    printf("--benchmark\n\t"
+           "run benchmarks\n");
+    printf("--timeout s\n\t"
+           "benchmark timeout value in seconds\n");
+    printf("--window w\n\t"
+           "benchmark window size\n");
+    printf("--help\n\t"
+           "Show this message\n");
+    printf("--verbose v\n\t"
+           "set verbosity level to v\n");
     return;
 }
 
@@ -73,14 +80,16 @@ config_new(int argc, char ** argv)
         { "validate",   no_argument, NULL, 'V'},
         { "help",       no_argument, NULL, 'h'},
         { "timeout",    required_argument, NULL, 't'},
+        { "window",    required_argument, NULL, 'w'},
         { NULL,           0,               NULL,  0  }
     };
     config * conf = calloc(1, sizeof(config));
     conf->verbose = 1;
     conf->timeout = 1.0; // s
+    conf->w = 16384; // 2^14
     int ch;
     while((ch = getopt_long(argc, argv,
-                            "vm:bVst:",
+                           "vm:bVst:w:",
                             longopts, NULL)) != -1) {
         switch(ch) {
         case 'v':
@@ -103,6 +112,10 @@ config_new(int argc, char ** argv)
             break;
         case 't':
             conf->timeout = atof(optarg);
+            break;
+        case 'w':
+            conf->w = (u32) atol(optarg);
+            break;
         default:
             break;
         }
@@ -122,7 +135,7 @@ int main(int argc, char ** argv){
 
     if(conf->benchmark == 1){
         pin_to_cpu(0);
-        u64 w = 16384; // 2^14
+        u64 w = conf->w;
         if( (conf->method == 0) | (conf->method == 1) ){
             agg_min_bench(conf->verbose, w, conf->timeout);
         }
