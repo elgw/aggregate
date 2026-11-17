@@ -9,19 +9,19 @@ blog](https://orlp.net/blog/two-stack-sliding-window-aggregation/) and
 described in [^1] and [^2]. I.e. method to efficiently calculate statistical
 properties of local windows of long inputs.
 
-The aggregate, $`A={l, l^{-1}, \otimes}`$ is a FIFO data structure
-which supports 1) push, 2) pop and 3) evaluate. $`l : \matcal{D}_x
+The aggregate, $`A=\{l, l^{-1}, \otimes\}`$ is a FIFO data structure
+which supports 1) push, 2) pop and 3) evaluate. $`l : \mathcal{D}_x
 \rightarrow \mathcal{D}_i`$ is called the lift operator and is a
 mapping from an external domain $`\mathcal{D}_x`$ to some internal
 domain $`\mathcal{D}_i`$. The binary operator $`\otimes : \mathcal{D}i
-\rightarrow \mathcal{D}_i$ is an associative operator. If elements from
-the sequence $`X=[x_1, x_2, ...]`$, $x_i\in \mathcal{D}_x`$ are
+\rightarrow \mathcal{D}_i`$ is an associative operator. If elements from
+the sequence $`X=[x_1, x_2, ...]`$, $`x_i\in \mathcal{D}_x`$ are
 processed and and we push the elements from left to right, then, after
 pushing up to $`b`$ elements and popping $`a`$ elements, it evaluates
 to:
 
 $$
-y_{a, b} = l^{-1} \left( \prod_{j=a+1}^{b} l(x_j) \right) = l^{-1} \left( l(x_{a+1} \otimes l(x_a) \otimes ... \otimes l(x_b) \right)
+y_{a, b} = l^{-1} \left( \prod_{j=a+1}^{b} l(x_j) \right) = l^{-1} \left( l(x_{a+1)} \otimes l(x_a) \otimes ... \otimes l(x_b) \right)
 $$
 
 With the right choices of lift function $`l`$ and combination function
