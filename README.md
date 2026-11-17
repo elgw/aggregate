@@ -21,12 +21,13 @@ pushing up to $`b`$ elements and popping $`a`$ elements, it evaluates
 to:
 
 $$
-y_{a, b} = l^{-1} \left( \prod_{j=a+1}^{b} l(x_j) \right) = l^{-1} \left( l(x_{a+1)} \otimes l(x_a) \otimes ... \otimes l(x_b) \right)
+y_{a, b} = l^{-1} \left( \prod_{j=a+1}^{b} l(x_j) \right) = l^{-1} \left( l(x_{a+1)} \otimes l(x_{a+2}) \otimes ... \otimes l(x_b) \right)
 $$
 
-With the right choices of lift function $`l`$ and combination function
+With the right choices of lift function $`l`$ and combination operator
 $`\otimes`$, the aggreator can be used to calculate min, max, standard
-deviation etc for running data with at most two evaluations of `\otimes`
+deviation etc for running data with at most two evaluations of
+$`\otimes`$ for each inserted element.
 
 My Observation: In the two-stacks approach, it seems wasteful to
 maintain two lists of $`w=b-a`$ elements, one should be enough!
