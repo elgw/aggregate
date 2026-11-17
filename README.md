@@ -13,7 +13,7 @@ The aggregate, $`A=\{l, l^{-1}, \otimes\}`$ is a FIFO data structure
 which supports 1) push, 2) pop and 3) evaluate. $`l : \mathcal{D}_x
 \rightarrow \mathcal{D}_i`$ is called the lift operator and is a
 mapping from an external domain $`\mathcal{D}_x`$ to some internal
-domain $`\mathcal{D}_i`$. The operator $`\otimes : \mathcal{D}_i \time \mathcal{D}_i
+domain $`\mathcal{D}_i`$. The operator $`\otimes : \mathcal{D}_i \times \mathcal{D}_i
 \rightarrow \mathcal{D}_i`$ is required to be associative. If elements from
 the sequence $`X=[x_1, x_2, ...]`$, $`x_i\in \mathcal{D}_x`$ are
 processed and and we push the elements from left to right, then, after
