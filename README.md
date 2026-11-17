@@ -25,11 +25,11 @@ y_{a, b} = l^{-1} \left( \prod_{j=a+1}^{b} l(x_j) \right) = l^{-1} \left( l(x_{a
 $$
 
 With the right choices of lift function $`l`$ and combination function
-`\otimes`, the aggreator can be used to calculate min, max, standard
+$`\otimes`$, the aggreator can be used to calculate min, max, standard
 deviation etc for running data with at most two evaluations of `\otimes`
 
 My Observation: In the two-stacks approach, it seems wasteful to
-maintain two windows of $`w`$ elements, one should be enough!
+maintain two lists of $`w=b-a`$ elements, one should be enough!
 
 Tested here: The two lists are replaced by a single circular/ring buffer.
 
