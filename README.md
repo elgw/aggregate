@@ -94,12 +94,12 @@ The table will show how many ticks it takes (`__rdtscp`) in average
 for each cycle of **pop**, **push** and **eval** using a window size
 of $`2^{14}`$ elements, (at least that is how my code is measured).
 
-|           | Two-Stacks | agg |      gagg |
-|----------:|-----------:|----:|----------:|
-|   Max/Min |        125 |  67 |        89 |
-| ArithMean |        165 |  77 | not timed |
-|    StdDev |        200 |  93 | not timed |
-|           |            |     |           |
+|           | Two-Stacks [^2] | agg |      gagg |
+|----------:|----------------:|----:|----------:|
+|   Max/Min |             125 |  67 |        89 |
+| ArithMean |             165 |  77 | not timed |
+|    StdDev |             200 |  93 | not timed |
+|           |                 |     |           |
 
 Throughput can be approximated by `cpufreq/latency*sizeof(u64)` bytes
 per second, e.g. agg-min gives 4426/67*8 ~ 528 MB/s on my system.
